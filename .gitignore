@@ -1,5 +1,6 @@
 .cache/
 .venv/
 .idea/
+.che/
 __pycache__/
 *.pyc

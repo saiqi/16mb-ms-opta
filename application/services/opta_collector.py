@@ -1,3 +1,4 @@
+import datetime
 
 from nameko.rpc import rpc
 from nameko.timer import timer
@@ -38,8 +39,31 @@ class OptaCollectorService(object):
     def update_f1_f9(self):
     
         self.create_f9_indexes()
+
+        now = datetime.datetime.utcnow()
+
+        end_date = now + datetime.timedelta(minutes=120)
+
+        start_date = now - datetime.timedelta(days=3)
         
-        ids = self.database.f1.find({})
-    
-        
-    
+        ids = self.database.f1.find({'date': {'$gte': start_date, '$lt': end_date}}, {'id': 1})
+
+        for row in ids:
+            game = self.opta.get_game(row['id'])
+
+            self.database.f9.update_one(
+                {'match_info.id': game['match_info']['id']},
+                {'$set': {
+                    'season': game['season'],
+                    'competition': game['competition'],
+                    'venue': game['venue'],
+                    'teams': game['teams'],
+                    'persons': game['persons'],
+                    'match_info': game['match_info'],
+                    'bookings': game['bookings'],
+                    'goals': game['goals'],
+                    'missed_penalties': game['missed_penalties'],
+                    'substitutions': game['substitutions'],
+                    'team_stats': game['team_stats'],
+                    'player_stats': game['team_stats']
+                }}, upsert=True)

@@ -1,9 +1,8 @@
 import datetime
 
-from nameko.rpc import rpc
+from nameko.rpc import rpc, RpcProxy
 from nameko.timer import timer
-from nameko.events import EventDispatcher
-from pymongo import IndexModel, ASCENDING, DESCENDING
+from pymongo import IndexModel, ASCENDING
 from nameko_mongodb.database import MongoDatabase
 
 from application.dependencies.opta import OptaDependency
@@ -16,7 +15,7 @@ class OptaCollectorService(object):
 
     opta = OptaDependency()
 
-    dispatcher = EventDispatcher()
+    datastore = RpcProxy('datastore_service')
 
     def create_f1_indexes(self):
         indexes = [IndexModel([('id', ASCENDING,)])]

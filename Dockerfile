@@ -1,7 +1,7 @@
 FROM saiqi/16mb-platform:latest
 
-RUN apt-get install -y libxml2-dev libxslt-dev python-dev ; \
-    pip install lxml python-dateutil pytz
+RUN apt-get install -y python3-lxml ; \
+    pip install python-dateutil pytz
 
 RUN mkdir /service 
 

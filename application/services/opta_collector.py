@@ -33,6 +33,15 @@ class OptaCollectorService(object):
         calendar = self.opta.get_calendar(season_id, competition_id)
         
         self.database.f1.insert_many(calendar)
+
+    @rpc
+    def update_all_f9(self, season_id, competition_id):
+
+        self.create_f9_indexes()
+
+        ids = self.database.f1.find({'season_id': season_id, 'competition_id': competition_id})
+
+        self._load_f9(ids)
         
     @rpc
     @timer(900)
@@ -48,7 +57,11 @@ class OptaCollectorService(object):
         
         ids = self.database.f1.find({'date': {'$gte': start_date, '$lt': end_date}}, {'id': 1})
 
-        for row in ids:
+        self._load_f9(ids)
+
+    def _load_f9(self, cursor):
+
+        for row in cursor:
             game = self.opta.get_game(row['id'])
 
             self.database.f9.update_one(
@@ -67,3 +80,4 @@ class OptaCollectorService(object):
                     'team_stats': game['team_stats'],
                     'player_stats': game['team_stats']
                 }}, upsert=True)
+

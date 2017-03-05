@@ -597,6 +597,16 @@ class OptaWebService(object):
 
         return parser.get_calendar()
 
+    def is_game_ready(self, game_id):
+        params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
+
+        r = requests.get(self.f9_url, params=params)
+
+        if 'response' in r.content:
+            return False
+
+        return True
+
     def get_game(self, game_id):
         params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
 

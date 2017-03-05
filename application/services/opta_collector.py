@@ -83,21 +83,22 @@ class OptaCollectorService(object):
     def _load_f9(self, cursor):
 
         for row in cursor:
-            game = self.opta.get_game(row['id'])
+            if self.opta.is_game_ready(row['id']):
+                game = self.opta.get_game(row['id'])
 
-            self.database.f9.update_one(
-                {'match_info.id': game['match_info']['id']},
-                {'$set': {
-                    'season': game['season'],
-                    'competition': game['competition'],
-                    'venue': game['venue'],
-                    'teams': game['teams'],
-                    'persons': game['persons'],
-                    'match_info': game['match_info'],
-                    'bookings': game['bookings'],
-                    'goals': game['goals'],
-                    'missed_penalties': game['missed_penalties'],
-                    'substitutions': game['substitutions'],
-                    'team_stats': game['team_stats'],
-                    'player_stats': game['player_stats']
-                }}, upsert=True)
+                self.database.f9.update_one(
+                    {'match_info.id': game['match_info']['id']},
+                    {'$set': {
+                        'season': game['season'],
+                        'competition': game['competition'],
+                        'venue': game['venue'],
+                        'teams': game['teams'],
+                        'persons': game['persons'],
+                        'match_info': game['match_info'],
+                        'bookings': game['bookings'],
+                        'goals': game['goals'],
+                        'missed_penalties': game['missed_penalties'],
+                        'substitutions': game['substitutions'],
+                        'team_stats': game['team_stats'],
+                        'player_stats': game['player_stats']
+                    }}, upsert=True)

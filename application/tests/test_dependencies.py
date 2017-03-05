@@ -21,6 +21,10 @@ class DummyService(object):
 
         return game
 
+    @dummy
+    def is_game_ready(self):
+        return self.opta_webservice.is_game_ready('805305')
+
 
 def test_end_to_end(opta_url, opta_user, opta_password, container_factory):
     config = {'OPTA_URL': opta_url, 'OPTA_USER': opta_user, 'OPTA_PASSWORD': opta_password}
@@ -31,6 +35,9 @@ def test_end_to_end(opta_url, opta_user, opta_password, container_factory):
     with entrypoint_hook(container, 'get_calendar') as get_calendar:
         calendar = get_calendar()
         assert len(calendar) == 380
+
+    with entrypoint_hook(container, 'is_game_ready') as is_game_ready:
+        assert is_game_ready() is True
 
     with entrypoint_hook(container, 'get_game') as get_game:
         game = get_game()

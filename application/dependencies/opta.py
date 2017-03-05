@@ -602,7 +602,7 @@ class OptaWebService(object):
 
         r = requests.get(self.f9_url, params=params)
 
-        if 'response' in r.content:
+        if 'response' in r.text:
             return False
 
         return True

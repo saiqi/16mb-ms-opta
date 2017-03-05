@@ -84,7 +84,10 @@ class OptaCollectorService(object):
 
         for row in cursor:
             if self.opta.is_game_ready(row['id']):
-                game = self.opta.get_game(row['id'])
+                try:
+                    game = self.opta.get_game(row['id'])
+                except Exception:
+                    continue
 
                 self.database.f9.update_one(
                     {'match_info.id': game['match_info']['id']},

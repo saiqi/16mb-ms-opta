@@ -1,7 +1,7 @@
+import pytest
 from nameko.testing.services import dummy, entrypoint_hook
 
-
-from application.dependencies.opta import OptaDependency
+from application.dependencies.opta import OptaDependency, OptaWebServiceError
 
 
 class DummyService(object):
@@ -18,6 +18,12 @@ class DummyService(object):
     @dummy
     def get_game(self):
         game = self.opta_webservice.get_game('805305')
+
+        return game
+
+    @dummy
+    def get_corrupted_game(self):
+        game = self.opta_webservice.get_game('impossible')
 
         return game
 
@@ -43,3 +49,8 @@ def test_end_to_end(opta_url, opta_user, opta_password, container_factory):
         game = get_game()
         assert game['season']['id'] == '2015'
         assert game['competition']['id'] == 'c24'
+
+    with entrypoint_hook(container, 'get_corrupted_game') as get_corrupted_game:
+        with pytest.raises(OptaWebServiceError):
+            get_corrupted_game()
+

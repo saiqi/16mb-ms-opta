@@ -253,16 +253,19 @@ class OptaF9Parser(object):
             tz = pytz.timezone('Europe/London')
             date = tz.localize(date).astimezone(pytz.utc)
 
+        winner_id = None
         if match_info.xpath('Result'):
             result = match_info.xpath('Result')[0]
 
             winner_id = result.get('Winner')
 
+        official_id = None
         if match_data.xpath('MatchOfficial'):
             official = match_data.xpath('MatchOfficial')[0]
 
             official_id = official.get('uID')
 
+        venue_id = None
         if node.xpath('Venue'):
             venue = node.xpath('Venue')[0]
 
@@ -580,6 +583,10 @@ class OptaF9Parser(object):
         return results
 
 
+class OptaWebServiceError(Exception):
+    pass
+
+
 class OptaWebService(object):
     def __init__(self, url, user, password):
         self.f9_url = url
@@ -595,7 +602,14 @@ class OptaWebService(object):
 
         parser = OptaF1Parser(r.content)
 
-        return parser.get_calendar()
+        try:
+            calendar = parser.get_calendar()
+        except Exception:
+            raise OptaWebServiceError(
+                'Error while parsing F1 with params: {season} {competition}'.format(season=season_id,
+                                                                                    competition=competition_id))
+
+        return calendar
 
     def is_game_ready(self, game_id):
         params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
@@ -614,20 +628,23 @@ class OptaWebService(object):
 
         parser = OptaF9Parser(r.content)
 
-        game = {
-            'season': parser.get_season(),
-            'competition': parser.get_competition(),
-            'venue': parser.get_venue(),
-            'teams': parser.get_teams(),
-            'persons': parser.get_persons(),
-            'match_info': parser.get_match_info(),
-            'bookings': parser.get_bookings(),
-            'goals': parser.get_goals(),
-            'missed_penalties': parser.get_missed_penalties(),
-            'substitutions': parser.get_substitutions(),
-            'team_stats': parser.get_team_stats(),
-            'player_stats': parser.get_player_stats()
-        }
+        try:
+            game = {
+                'season': parser.get_season(),
+                'competition': parser.get_competition(),
+                'venue': parser.get_venue(),
+                'teams': parser.get_teams(),
+                'persons': parser.get_persons(),
+                'match_info': parser.get_match_info(),
+                'bookings': parser.get_bookings(),
+                'goals': parser.get_goals(),
+                'missed_penalties': parser.get_missed_penalties(),
+                'substitutions': parser.get_substitutions(),
+                'team_stats': parser.get_team_stats(),
+                'player_stats': parser.get_player_stats()
+            }
+        except Exception:
+            raise OptaWebServiceError('Error while parsing F1 with params: {game}'.format(game=game_id))
 
         return game
 

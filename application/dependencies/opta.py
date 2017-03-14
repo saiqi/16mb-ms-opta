@@ -8,7 +8,14 @@ import dateutil.parser
 from nameko.dependency_providers import DependencyProvider
 
 
-class OptaF1Parser:
+class OptaParser(object):
+
+    def _compute_fingerprint(self, fields):
+        concat = ''.join(str(f) if f is not None else '' for f in fields)
+        return hashlib.sha1(concat.encode('utf-8')).hexdigest()
+
+
+class OptaF1Parser(OptaParser):
     def __init__(self, xml_string):
         self.tree = etree.fromstring(xml_string)
 
@@ -43,13 +50,14 @@ class OptaF1Parser:
                 'id': match_id,
                 'date': date,
                 'home_id': home_id,
-                'away_id': away_id
+                'away_id': away_id,
+                'fingerprint': self._compute_fingerprint([date, home_id, away_id])
             })
 
         return calendar
 
 
-class OptaF9Parser(object):
+class OptaF9Parser(OptaParser):
     def __init__(self, xml_string):
         parser = etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
         self.tree = etree.fromstring(xml_string, parser=parser)
@@ -71,8 +79,13 @@ class OptaF9Parser(object):
         if node.xpath("Stat[@Type='symid']"):
             code = node.xpath("Stat[@Type='symid']")[0].text
 
-        return {'id': id, 'name': name,
-                'country': country if country is not None else '', 'code': code}
+        return {
+            'id': id, 
+            'name': name,
+            'country': country if country is not None else '', 
+            'code': code,
+            'fingerprint': self._compute_fingerprint([name, country, code])
+            }
 
     def get_season(self):
         node = self.tree.xpath('SoccerDocument/Competition')[0]
@@ -85,7 +98,7 @@ class OptaF9Parser(object):
         if node.xpath("Stat[@Type='season_name']"):
             name = node.xpath("Stat[@Type='season_name']")[0].text.replace('Season', '')
 
-        return {'id': id, 'name': name}
+        return {'id': id, 'name': name, 'fingerprint': self._compute_fingerprint([name])}
 
     def get_venue(self):
         if self.tree.xpath('SoccerDocument/Venue'):
@@ -101,7 +114,12 @@ class OptaF9Parser(object):
             if venue.xpath('Name'):
                 name = venue.xpath('Name')[0].text
 
-            return {'id': id, 'name': name, 'country': country}
+            return {
+                'id': id, 
+                'name': name, 
+                'country': country, 
+                'fingerprint': self._compute_fingerprint([name, country])
+                }
 
         return None
 
@@ -121,7 +139,12 @@ class OptaF9Parser(object):
                 if t.xpath('Name'):
                     name = t.xpath('Name')[0].text
 
-                results.append({'id': id, 'name': name, 'country': country})
+                results.append({
+                    'id': id, 
+                    'name': name, 
+                    'country': country,
+                    'fingerprint': self._compute_fingerprint([name, country])
+                    })
 
         return results
 
@@ -157,8 +180,13 @@ class OptaF9Parser(object):
                             if person_name.xpath('Known'):
                                 known_name = person_name.xpath('Known')[0].text
 
-                        results.append({'id': id, 'first_name': first_name,
-                                        'last_name': last_name, 'known': known_name})
+                        results.append({
+                            'id': id, 
+                            'first_name': first_name,
+                            'last_name': last_name, 
+                            'known': known_name,
+                            'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
+                            })
 
                 # Team official
                 if t.xpath("TeamOfficial[@Type='Manager']"):
@@ -181,8 +209,13 @@ class OptaF9Parser(object):
                         if person_name.xpath('Known'):
                             known_name = person_name.xpath('Known')[0].text
 
-                    results.append({'id': id, 'first_name': first_name,
-                                    'last_name': last_name, 'known': known_name})
+                    results.append({
+                        'id': id, 
+                        'first_name': first_name,
+                        'last_name': last_name, 
+                        'known': known_name,
+                        'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
+                        })
 
             if self.tree.xpath('SoccerDocument/MatchData/MatchOfficial'):
                 node = self.tree.xpath('SoccerDocument/MatchData/MatchOfficial')[0]
@@ -204,8 +237,13 @@ class OptaF9Parser(object):
                 if person_name.xpath('Known'):
                     known_name = person_name.xpath('Known')[0].text
 
-                results.append({'id': id, 'first_name': first_name,
-                                'last_name': last_name, 'known': known_name})
+                results.append({
+                    'id': id, 
+                    'first_name': first_name,
+                    'last_name': last_name, 
+                    'known': known_name,
+                    'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
+                    })
 
         return results
 
@@ -285,7 +323,9 @@ class OptaF9Parser(object):
                 'round_name': name,
                 'venue_id': venue_id,
                 'match_official_id': official_id,
-                'winner_id': winner_id}
+                'winner_id': winner_id,
+                'fingerprint': self._compute_fingerprint([weather, attendance, period, venue_id, official_id, winner_id])
+                }
 
     def get_goals(self):
         results = []
@@ -322,7 +362,8 @@ class OptaF9Parser(object):
                                 'player_id': player_id,
                                 'type': _type,
                                 'assist_id': assist_id,
-                                'second_assist_id': second_assist_id})
+                                'second_assist_id': second_assist_id,
+                                'fingerprint': self._compute_fingerprint([time, player_id, _type, assist_id, second_assist_id])})
 
         return results
 
@@ -353,7 +394,9 @@ class OptaF9Parser(object):
                                 'time': time,
                                 'player_off_id': player_on_id,
                                 'reason': reason,
-                                'player_on_id': player_off_id})
+                                'player_on_id': player_off_id,
+                                'fingerprint': self._compute_fingerprint([time, player_off_id, player_on_id, reason])
+                                })
 
         return results
 
@@ -386,7 +429,9 @@ class OptaF9Parser(object):
                                 'player_id': player_id,
                                 'reason': reason,
                                 'card': card,
-                                'cardtype': card_type})
+                                'cardtype': card_type,
+                                'fingerprint': self._compute_fingerprint([time, player_id, card, card_type, reason])
+                                })
 
         return results
 
@@ -415,7 +460,8 @@ class OptaF9Parser(object):
                                 'team_id': team_id,
                                 'time': time,
                                 'player_id': player_id,
-                                'type': _type})
+                                'type': _type,
+                                'fingerprint': self._compute_fingerprint([time, player_id, _type])})
 
         return results
 
@@ -492,7 +538,9 @@ class OptaF9Parser(object):
                     'sh': sh,
                     'efh': efh,
                     'esh': esh,
-                    'value': value})
+                    'value': value,
+                    'fingerprint': self._compute_fingerprint([score, sh_score, side, formation_used, official_id, fh, sh, efh, esh, value])
+                    })
 
         return results
 
@@ -578,7 +626,10 @@ class OptaF9Parser(object):
                         'captain': captain,
                         'formation_place': formation_place,
                         'type': _type,
-                        'value': value})
+                        'value': value,
+                        'fingerprint': self._compute_fingerprint([score, sh_score, side, formation_used, official_id, position,
+                        sub_position, shirt_number, status, captain, formation_place, value])
+                        })
 
         return results
 

@@ -15,7 +15,7 @@ class OptaCollectorService(object):
 
     opta = OptaDependency()
 
-    datastore = RpcProxy('datastore_service')
+    datastore = RpcProxy('datastore')
 
     def create_f1_indexes(self):
         indexes = [IndexModel([('id', ASCENDING,)])]

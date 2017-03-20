@@ -76,7 +76,6 @@ class OptaCollectorService(object):
 
         to_insert = []
         to_update = []
-        to_delete = []
 
         if simple_update is False:
             prevs = self.database[collection].find({parent_key: parent_value}, {record_key: 1, '_id': 0})
@@ -88,7 +87,7 @@ class OptaCollectorService(object):
 
             for r in del_ids:
                 self.database[collection].delete_one({record_key: r})
-                to_delete.append({record_key: r})
+                self.datastore.delete(target_table, {record_key: r})
 
         for rec in records:
             prev_game = self.database[collection].find_one({record_key: rec[record_key]}, {'fingerprint': 1, '_id': 0})
@@ -100,9 +99,6 @@ class OptaCollectorService(object):
                 if prev_game['fingerprint'] != rec['fingerprint']:
                     self.database[collection].update_one({record_key: rec[record_key]}, {'$set': rec})
                     to_update.append(rec)
-
-        if len(to_delete) > 0:
-            self.datastore.delete(target_table, dumps(to_delete))
 
         if len(to_insert) > 0:
             self.datastore.insert(target_table, dumps(to_insert), meta)

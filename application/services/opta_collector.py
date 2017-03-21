@@ -53,11 +53,7 @@ class OptaCollectorService(object):
 
             for game in calendar:
                 self.database.calendar.update_one({'id': game['id']},
-                                                  {'$set': {
-                                                      'date': game['date'],
-                                                      'home_id': game['home_id'],
-                                                      'away_id': game['away_id']
-                                                  }})
+                                                  {'$set': game})
 
         now = datetime.datetime.utcnow()
 

@@ -34,7 +34,7 @@ class OptaCollectorService(object):
 
         ids = self.database.calendar.find({'season_id': season_id, 'competition_id': competition_id})
 
-        self._load_f9(ids)
+        self._load_f9(list(ids))
 
     @rpc
     @timer(900)
@@ -63,7 +63,7 @@ class OptaCollectorService(object):
 
         ids = self.database.calendar.find({'date': {'$gte': start_date, '$lt': end_date}}, {'id': 1})
 
-        self._load_f9(ids)
+        self._load_f9(list(ids))
 
     def _load(self, records, collection, target_table, meta, record_key, parent_key=None, parent_value=None,
               simple_update=True):
@@ -89,18 +89,20 @@ class OptaCollectorService(object):
             prev_game = self.database[collection].find_one({record_key: rec[record_key]}, {'fingerprint': 1, '_id': 0})
 
             if not prev_game:
-                self.database[collection].update_one({record_key: rec[record_key]}, {'$set': rec}, upsert=True)
                 to_insert.append(rec)
             else:
                 if prev_game['fingerprint'] != rec['fingerprint']:
-                    self.database[collection].update_one({record_key: rec[record_key]}, {'$set': rec})
                     to_update.append(rec)
 
         if len(to_insert) > 0:
             self.datastore.insert(target_table, dumps(to_insert), meta)
+            for rec in to_insert:
+                self.database[collection].update_one({record_key: rec[record_key]}, {'$set': rec}, upsert=True)
 
         if len(to_update) > 0:
             self.datastore.update(target_table, record_key, dumps(to_update))
+            for rec in to_update:
+                self.database[collection].update_one({record_key: rec[record_key]}, {'$set': rec})
 
     def _load_f9(self, game_ids):
 

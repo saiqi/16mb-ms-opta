@@ -506,43 +506,45 @@ class OptaF9Parser(OptaParser):
             for s in stats:
                 id = s.get('EventID')
                 _type = s.get('Type')
-                fh = None
-                if s.get('FH'):
-                    fh = s.get('FH')
-                sh = None
-                if s.get('SH'):
-                    sh = s.get('SH')
-                efh = None
-                if s.get('EFH'):
-                    efh = s.get('EFH')
-                esh = None
-                if s.get('ESH'):
-                    esh = s.get('ESH')
-                value = s.text
 
-                id = hashlib.sha1(
-                    ''.join([competition_id, season_id, match_id, team_id, _type]).encode('utf-8')).hexdigest()
+                if _type != 'formation_used':
+                    fh = None
+                    if s.get('FH'):
+                        fh = s.get('FH')
+                    sh = None
+                    if s.get('SH'):
+                        sh = s.get('SH')
+                    efh = None
+                    if s.get('EFH'):
+                        efh = s.get('EFH')
+                    esh = None
+                    if s.get('ESH'):
+                        esh = s.get('ESH')
+                    value = s.text
 
-                results.append({
-                    'id': id,
-                    'competition_id': competition_id,
-                    'season_id': season_id,
-                    'match_id': match_id,
-                    'team_id': team_id,
-                    'score': score,
-                    'shootout_score': sh_score,
-                    'side': side,
-                    'formation_used': formation_used,
-                    'official_id': official_id,
-                    'type': _type,
-                    'fh': fh,
-                    'sh': sh,
-                    'efh': efh,
-                    'esh': esh,
-                    'value': value,
-                    'fingerprint': self._compute_fingerprint(
-                        [score, sh_score, side, formation_used, official_id, fh, sh, efh, esh, value])
-                })
+                    id = hashlib.sha1(
+                        ''.join([competition_id, season_id, match_id, team_id, _type]).encode('utf-8')).hexdigest()
+
+                    results.append({
+                        'id': id,
+                        'competition_id': competition_id,
+                        'season_id': season_id,
+                        'match_id': match_id,
+                        'team_id': team_id,
+                        'score': score,
+                        'shootout_score': sh_score,
+                        'side': side,
+                        'formation_used': formation_used,
+                        'official_id': official_id,
+                        'type': _type,
+                        'fh': fh,
+                        'sh': sh,
+                        'efh': efh,
+                        'esh': esh,
+                        'value': value,
+                        'fingerprint': self._compute_fingerprint(
+                            [score, sh_score, side, formation_used, official_id, fh, sh, efh, esh, value])
+                    })
 
         return results
 
@@ -606,33 +608,35 @@ class OptaF9Parser(OptaParser):
                     _type = s.get('Type')
                     value = s.text
 
-                    id = hashlib.sha1(
-                        ''.join([competition_id, season_id, match_id, player_id, _type]).encode('utf-8')).hexdigest()
+                    if _type != 'formation_place':
+                        id = hashlib.sha1(
+                            ''.join([competition_id, season_id, match_id, player_id, _type]).encode(
+                                'utf-8')).hexdigest()
 
-                    results.append({
-                        'id': id,
-                        'player_id': player_id,
-                        'competition_id': competition_id,
-                        'season_id': season_id,
-                        'match_id': match_id,
-                        'team_id': team_id,
-                        'score': score,
-                        'shootout_score': sh_score,
-                        'side': side,
-                        'formation_used': formation_used,
-                        'official_id': official_id,
-                        'main_position': position,
-                        'sub_position': sub_position,
-                        'shirt_number': shirt_number,
-                        'status': status,
-                        'captain': captain,
-                        'formation_place': formation_place,
-                        'type': _type,
-                        'value': value,
-                        'fingerprint': self._compute_fingerprint(
-                            [score, sh_score, side, formation_used, official_id, position,
-                             sub_position, shirt_number, status, captain, formation_place, value])
-                    })
+                        results.append({
+                            'id': id,
+                            'player_id': player_id,
+                            'competition_id': competition_id,
+                            'season_id': season_id,
+                            'match_id': match_id,
+                            'team_id': team_id,
+                            'score': score,
+                            'shootout_score': sh_score,
+                            'side': side,
+                            'formation_used': formation_used,
+                            'official_id': official_id,
+                            'main_position': position,
+                            'sub_position': sub_position,
+                            'shirt_number': shirt_number,
+                            'status': status,
+                            'captain': captain,
+                            'formation_place': formation_place,
+                            'type': _type,
+                            'value': value,
+                            'fingerprint': self._compute_fingerprint(
+                                [score, sh_score, side, formation_used, official_id, position,
+                                 sub_position, shirt_number, status, captain, formation_place, value])
+                        })
 
         return results
 

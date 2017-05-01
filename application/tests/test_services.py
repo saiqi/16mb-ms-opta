@@ -55,7 +55,7 @@ def test_update_all_f9(database):
         'venue': {'id': 'v_id', 'fingerprint': 'venue'},
         'teams': [{'id': 't_1', 'fingerprint': 't1'}, {'id': 't_2', 'fingerprint': 't2'}],
         'persons': [{'id': 'p_1', 'fingerprint': 'p1'}, {'id': 'p_2', 'fingerprint': 'p2'}],
-        'match_info': {'id': game_id, 'fingerprint': 'game'},
+        'match_info': {'id': game_id, 'fingerprint': 'game', 'period': 'FullTime'},
         'events': [{'id': 'e_1', 'fingerprint': 'e1'}, {'id': 'e_2', 'fingerprint': 'e2'}],
         'team_stats': [{'id': 'ts_1', 'fingerprint': 'ts1'}, {'id': 'ts_2', 'fingerprint': 'ts2'}],
         'player_stats': [{'id': 'ps_1', 'fingerprint': 'ps1'}, {'id': 'ps_2', 'fingerprint': 'ps2'}]
@@ -90,7 +90,7 @@ def test_update_f1_f9(database):
         'venue': {'id': 'v_id', 'fingerprint': 'venue'},
         'teams': [{'id': 't_1', 'fingerprint': 't1'}, {'id': 't_2', 'fingerprint': 't2'}],
         'persons': [{'id': 'p_1', 'fingerprint': 'p1'}, {'id': 'p_2', 'fingerprint': 'p2'}],
-        'match_info': {'id': game_id, 'fingerprint': 'game'},
+        'match_info': {'id': game_id, 'fingerprint': 'game', 'period': 'FullTime'},
         'events': [{'id': 'e_1', 'fingerprint': 'e1'}, {'id': 'e_2', 'fingerprint': 'e2'}],
         'team_stats': [{'id': 'ts_1', 'fingerprint': 'ts1'}, {'id': 'ts_2', 'fingerprint': 'ts2'}],
         'player_stats': [{'id': 'ps_1', 'fingerprint': 'ps1', 'match_id': 'g_id'},
@@ -112,7 +112,7 @@ def test_update_f1_f9(database):
         'venue': {'id': 'v_id', 'fingerprint': 'venue'},
         'teams': [{'id': 't_1', 'fingerprint': 't1'}, {'id': 't_2', 'fingerprint': 't2'}],
         'persons': [{'id': 'p_1', 'fingerprint': 'p1'}, {'id': 'p_2', 'fingerprint': 'p2'}],
-        'match_info': {'id': game_id, 'fingerprint': 'game'},
+        'match_info': {'id': game_id, 'fingerprint': 'game', 'period': 'FullTime'},
         'events': [{'id': 'e_1', 'fingerprint': 'e1'}, {'id': 'e_2', 'fingerprint': 'e2'}],
         'team_stats': [{'id': 'ts_1', 'fingerprint': 'ts1'}, {'id': 'ts_2', 'fingerprint': 'ts2'}],
         'player_stats': [{'id': 'ps_1', 'fingerprint': 'ps1', 'match_id': 'g_id'}]

@@ -677,6 +677,11 @@ class OptaWebService(object):
         if 'response' in r.text:
             return False
 
+        parser = OptaF9Parser(r.content)
+
+        if parser.get_match_info()['period'] != 'FullTime':
+            return False
+
         return True
 
     def _compute_events(self, game):

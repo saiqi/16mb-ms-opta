@@ -2,6 +2,7 @@ import datetime
 
 from nameko.rpc import rpc, RpcProxy
 from nameko.timer import timer
+from nameko.events import EventDispatcher
 from bson.json_util import dumps
 from nameko_mongodb.database import MongoDatabase
 
@@ -16,6 +17,8 @@ class OptaCollectorService(object):
     opta = OptaDependency()
 
     datastore = RpcProxy('datastore')
+
+    dispatcher = EventDispatcher()
 
     @rpc
     def add_f1(self, season_id, competition_id):
@@ -68,6 +71,8 @@ class OptaCollectorService(object):
     def _load(self, records, collection, target_table, meta, record_key, parent_key=None, parent_value=None,
               simple_update=True):
 
+        has_changed = False
+
         self.database[collection].create_index(record_key)
 
         to_insert = []
@@ -81,9 +86,11 @@ class OptaCollectorService(object):
 
             del_ids = prev_ids.difference(ids)
 
-            for r in del_ids:
-                self.database[collection].delete_one({record_key: r})
-                self.datastore.delete(target_table, {record_key: r})
+            if len(del_ids) > 0:
+                has_changed = True
+                for r in del_ids:
+                    self.database[collection].delete_one({record_key: r})
+                    self.datastore.delete(target_table, {record_key: r})
 
         for rec in records:
             prev_game = self.database[collection].find_one({record_key: rec[record_key]}, {'fingerprint': 1, '_id': 0})
@@ -95,14 +102,18 @@ class OptaCollectorService(object):
                     to_update.append(rec)
 
         if len(to_insert) > 0:
+            has_changed = True
             self.datastore.insert(target_table, dumps(to_insert), meta)
             for rec in to_insert:
                 self.database[collection].update_one({record_key: rec[record_key]}, {'$set': rec}, upsert=True)
 
         if len(to_update) > 0:
+            has_changed = True
             self.datastore.update(target_table, record_key, dumps(to_update))
             for rec in to_update:
                 self.database[collection].update_one({record_key: rec[record_key]}, {'$set': rec})
+
+        return has_changed
 
     def _load_f9(self, game_ids):
 
@@ -163,5 +174,9 @@ class OptaCollectorService(object):
                         ("main_position", "VARCHAR(20)"), ("sub_position", "VARCHAR(20)"), ("shirt_number", "INTEGER"),
                         ("status", "VARCHAR(20)"), ("captain", "VARCHAR(10)"), ("type", "VARCHAR(50)"),
                         ("value", "FLOAT"), ("formation_place", "VARCHAR(11)"), ("fingerprint", "VARCHAR(40)")]
-                self._load(game['player_stats'], 'playerstats', 'SOCCER_PLAYERSTAT', meta, 'id', parent_key='match_id',
-                           parent_value=game['match_info']['id'], simple_update=False)
+                has_changed = self._load(game['player_stats'], 'playerstats', 'SOCCER_PLAYERSTAT', meta, 'id',
+                                         parent_key='match_id', parent_value=game['match_info']['id'],
+                                         simple_update=False)
+
+                if has_changed is True:
+                    self.dispatcher('update_playerstats', {'match_id': game['match_info']['id']})

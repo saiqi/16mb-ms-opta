@@ -75,15 +75,6 @@ def test_update_all_f9(database):
 
 def test_update_f1_f9(database):
     service = worker_factory(OptaCollectorService, database=database)
-    service.opta.get_calendar.side_effect = lambda season_id, competition_id: [{
-        'competition_id': 'c_id',
-        'season_id': 's_id',
-        'date': datetime.datetime.now(),
-        'home_id': 'h_id',
-        'away_id': 'a_id',
-        'id': 'g_id',
-        'fingerprint': 'calendar'
-    }]
     service.opta.get_game.side_effect = lambda game_id: {
         'season': {'id': 's_id', 'fingerprint': 'season'},
         'competition': {'id': 'c_id', 'fingerprint': 'competition'},
@@ -97,8 +88,19 @@ def test_update_f1_f9(database):
                          {'id': 'ps_2', 'fingerprint': 'ps2', 'match_id': 'g_id'}]
     }
 
-    service.add_f1('s_id', 'c_id')
-    service.update_f1_f9()
+    database.calendar.insert_one({
+        'competition_id': 'c_id',
+        'season_id': 's_id',
+        'date': datetime.datetime.now(),
+        'home_id': 'h_id',
+        'away_id': 'a_id',
+        'id': 'g_id',
+        'fingerprint': 'calendar'
+    })
+
+    ids = service.update_f1_f9()
+
+    assert 'g_id' in ids
 
     stats = list(service.database.playerstats.find())
 
@@ -124,3 +126,11 @@ def test_update_f1_f9(database):
 
     assert len(stats) == 1
     assert service.database.playerstats.find_one({'id': 'ps_1'})['fingerprint'] == 'ps1'
+
+
+def test_get_matchinfos(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    database.matchinfos.insert_one({'id': 'g_id', 'payload': 'payload', 'date': datetime.datetime.utcnow()})
+
+    info = service.get_matchinfo('g_id')
+    assert info

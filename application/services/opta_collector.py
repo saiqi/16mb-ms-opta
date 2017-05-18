@@ -73,13 +73,7 @@ class OptaCollectorService(object):
 
         end_date = now + datetime.timedelta(minutes=120)
 
-        start_date = self._get_first_match_date()
-
-        if start_date is None:
-            start_date = self._get_first_calendar_date()
-        else:
-            if start_date > now - datetime.timedelta(days=5):
-                start_date = now - datetime.timedelta(days=5)
+        start_date = now - datetime.timedelta(days=3)
 
         ids = self.database.calendar.find({'date': {'$gte': start_date, '$lt': end_date}}, {'id': 1, '_id': 0})
 

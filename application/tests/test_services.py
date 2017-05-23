@@ -77,8 +77,10 @@ def test_get_ids_by_dates(database):
         'id': 'g_id',
         'fingerprint': 'calendar'})
 
-    ids = service.get_ids_by_dates(datetime.datetime.now() - datetime.timedelta(days=1),
-                                   datetime.datetime.now() + datetime.timedelta(days=1))
+    start_date = datetime.datetime.now() - datetime.timedelta(days=1)
+    end_date = datetime.datetime.now() + datetime.timedelta(days=1)
+
+    ids = service.get_ids_by_dates(start_date.isoformat(), end_date.isoformat())
 
     assert 'g_id' in ids
 

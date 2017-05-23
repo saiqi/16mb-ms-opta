@@ -3,6 +3,7 @@ import hashlib
 from nameko.rpc import rpc
 from nameko_mongodb.database import MongoDatabase
 import bson.json_util
+import dateutil.parser
 
 from application.dependencies.opta import OptaDependency
 
@@ -50,14 +51,16 @@ class OptaCollectorService(object):
 
     @rpc
     def get_ids_by_dates(self, start_date, end_date):
-        ids = self.database.f1.find({'date': {'$gte': start_date, '$lt': end_date}}, {'id': 1, '_id': 0})
+        start = dateutil.parser.parse(start_date)
+        end = dateutil.parser.parse(end_date)
+        ids = self.database.f1.find({'date': {'$gte': start, '$lt': end}}, {'id': 1, '_id': 0})
 
         return [r['id'] for r in ids]
 
     @rpc
     def get_ids_by_season_and_competition(self, season_id, competition_id):
         ids = self.database.f1.find({'season_id': season_id, 'competition_id': competition_id},
-                                          {'id': 1, '_id': 0})
+                                    {'id': 1, '_id': 0})
 
         return [r['id'] for r in ids]
 

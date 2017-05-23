@@ -677,11 +677,6 @@ class OptaWebService(object):
         if 'response' in r.text:
             return False
 
-        parser = OptaF9Parser(r.content)
-
-        if parser.get_match_info()['period'] != 'FullTime':
-            return False
-
         return True
 
     def _compute_events(self, game):
@@ -690,7 +685,8 @@ class OptaWebService(object):
         for stat in game.get_goals():
 
             d = dict()
-            d['id'] = stat['id']
+            d['id'] = hashlib.sha1(''.join([stat['id'], 'Goal']).encode('utf-8')).hexdigest()
+            d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
             d['match_id'] = stat['match_id']
@@ -707,7 +703,8 @@ class OptaWebService(object):
 
             if stat['assist_id'] is not None:
                 d = dict()
-                d['id'] = stat['id']
+                d['id'] = hashlib.sha1(''.join([stat['id'], 'Assist']).encode('utf-8')).hexdigest()
+                d['event_id'] = stat['id']
                 d['competition_id'] = game.get_competition()['id']
                 d['season_id'] = game.get_season()['id']
                 d['match_id'] = stat['match_id']
@@ -724,7 +721,8 @@ class OptaWebService(object):
 
             if stat['second_assist_id'] is not None:
                 d = dict()
-                d['id'] = stat['id']
+                d['id'] = hashlib.sha1(''.join([stat['id'], 'SecondAssist']).encode('utf-8')).hexdigest()
+                d['event_id'] = stat['id']
                 d['competition_id'] = game.get_competition()['id']
                 d['season_id'] = game.get_season()['id']
                 d['match_id'] = stat['match_id']
@@ -741,7 +739,8 @@ class OptaWebService(object):
 
         for stat in game.get_bookings():
             d = dict()
-            d['id'] = stat['id']
+            d['id'] = hashlib.sha1(''.join([stat['id'], stat['card']]).encode('utf-8')).hexdigest()
+            d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
             d['match_id'] = stat['match_id']
@@ -758,7 +757,8 @@ class OptaWebService(object):
 
         for stat in game.get_substitutions():
             d = dict()
-            d['id'] = stat['id']
+            d['id'] = hashlib.sha1(''.join([stat['id'], 'SubOff']).encode('utf-8')).hexdigest()
+            d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
             d['match_id'] = stat['match_id']
@@ -774,7 +774,8 @@ class OptaWebService(object):
             results.append(d)
 
             d = dict()
-            d['id'] = stat['id']
+            d['id'] = hashlib.sha1(''.join([stat['id'], 'SubOn']).encode('utf-8')).hexdigest()
+            d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
             d['match_id'] = stat['match_id']
@@ -796,24 +797,25 @@ class OptaWebService(object):
 
         r = requests.get(self.f9_url, params=params)
 
-        parser = OptaF9Parser(r.content)
-
         try:
-            events = self._compute_events(parser)
+            parser = OptaF9Parser(r.content)
 
-            game = {
-                'season': parser.get_season(),
-                'competition': parser.get_competition(),
-                'venue': parser.get_venue(),
-                'teams': parser.get_teams(),
-                'persons': parser.get_persons(),
-                'match_info': parser.get_match_info(),
-                'events': events,
-                'team_stats': parser.get_team_stats(),
-                'player_stats': parser.get_player_stats()
-            }
+            if parser.get_match_info()['period'] == 'FullTime':
+                events = self._compute_events(parser)
+
+                game = {
+                    'season': parser.get_season(),
+                    'competition': parser.get_competition(),
+                    'venue': parser.get_venue(),
+                    'teams': parser.get_teams(),
+                    'persons': parser.get_persons(),
+                    'match_info': parser.get_match_info(),
+                    'events': events,
+                    'team_stats': parser.get_team_stats(),
+                    'player_stats': parser.get_player_stats()
+                }
         except Exception:
-            raise OptaWebServiceError('Error while parsing F1 with params: {game}'.format(game=game_id))
+            raise OptaWebServiceError('Error while parsing F9 with params: {game}'.format(game=game_id))
 
         return game
 

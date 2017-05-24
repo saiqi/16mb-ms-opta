@@ -669,16 +669,6 @@ class OptaWebService(object):
 
         return calendar
 
-    def is_game_ready(self, game_id):
-        params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
-
-        r = requests.get(self.f9_url, params=params)
-
-        if 'response' in r.text:
-            return False
-
-        return True
-
     def _compute_events(self, game):
         results = []
 
@@ -793,9 +783,13 @@ class OptaWebService(object):
         return results
 
     def get_game(self, game_id):
+        game = None
         params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
 
         r = requests.get(self.f9_url, params=params)
+
+        if 'response' in r.text:
+            return game
 
         try:
             parser = OptaF9Parser(r.content)

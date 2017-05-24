@@ -69,8 +69,9 @@ class OptaCollectorService(object):
 
         self.database.f9.create_index('id')
 
-        if self.opta.is_game_ready(match_id):
-            game = self.opta.get_game(match_id)
+        game = self.opta.get_game(match_id)
+
+        if game:
             checksum = self._checksum(game)
 
             old_checksum = self.database.f9.find_one({'id': match_id}, {'checksum': 1, '_id': 0})

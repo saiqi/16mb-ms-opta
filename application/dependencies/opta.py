@@ -50,7 +50,7 @@ class OptaF1Parser(OptaParser):
                 'date': date,
                 'home_id': home_id,
                 'away_id': away_id,
-                'fingerprint': self._compute_fingerprint([date, home_id, away_id])
+                # 'fingerprint': self._compute_fingerprint([date, home_id, away_id])
             })
 
         return calendar
@@ -83,7 +83,7 @@ class OptaF9Parser(OptaParser):
             'name': name,
             'country': country if country is not None else '',
             'code': code,
-            'fingerprint': self._compute_fingerprint([name, country, code])
+            # 'fingerprint': self._compute_fingerprint([name, country, code])
         }
 
     def get_season(self):
@@ -117,7 +117,7 @@ class OptaF9Parser(OptaParser):
                 'id': id,
                 'name': name,
                 'country': country,
-                'fingerprint': self._compute_fingerprint([name, country])
+                # 'fingerprint': self._compute_fingerprint([name, country])
             }
 
         return None
@@ -142,7 +142,7 @@ class OptaF9Parser(OptaParser):
                     'id': id,
                     'name': name,
                     'country': country,
-                    'fingerprint': self._compute_fingerprint([name, country])
+                    # 'fingerprint': self._compute_fingerprint([name, country])
                 })
 
         return results
@@ -184,7 +184,7 @@ class OptaF9Parser(OptaParser):
                             'first_name': first_name,
                             'last_name': last_name,
                             'known': known_name,
-                            'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
+                            # 'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
                         })
 
                 # Team official
@@ -213,7 +213,7 @@ class OptaF9Parser(OptaParser):
                         'first_name': first_name,
                         'last_name': last_name,
                         'known': known_name,
-                        'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
+                        # 'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
                     })
 
             if self.tree.xpath('SoccerDocument/MatchData/MatchOfficial'):
@@ -241,7 +241,7 @@ class OptaF9Parser(OptaParser):
                     'first_name': first_name,
                     'last_name': last_name,
                     'known': known_name,
-                    'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
+                    # 'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
                 })
 
         return results
@@ -323,8 +323,8 @@ class OptaF9Parser(OptaParser):
                 'venue_id': venue_id,
                 'match_official_id': official_id,
                 'winner_id': winner_id,
-                'fingerprint': self._compute_fingerprint(
-                    [weather, attendance, period, venue_id, official_id, winner_id])
+                # 'fingerprint': self._compute_fingerprint(
+                #     [weather, attendance, period, venue_id, official_id, winner_id])
                 }
 
     def get_goals(self):
@@ -363,8 +363,9 @@ class OptaF9Parser(OptaParser):
                                 'type': _type,
                                 'assist_id': assist_id,
                                 'second_assist_id': second_assist_id,
-                                'fingerprint': self._compute_fingerprint(
-                                    [time, player_id, _type, assist_id, second_assist_id])})
+                                # 'fingerprint': self._compute_fingerprint(
+                                #     [time, player_id, _type, assist_id, second_assist_id])
+                })
 
         return results
 
@@ -396,7 +397,7 @@ class OptaF9Parser(OptaParser):
                                 'player_off_id': player_on_id,
                                 'reason': reason,
                                 'player_on_id': player_off_id,
-                                'fingerprint': self._compute_fingerprint([time, player_off_id, player_on_id, reason])
+                                # 'fingerprint': self._compute_fingerprint([time, player_off_id, player_on_id, reason])
                                 })
 
         return results
@@ -431,7 +432,7 @@ class OptaF9Parser(OptaParser):
                                 'reason': reason,
                                 'card': card,
                                 'cardtype': card_type,
-                                'fingerprint': self._compute_fingerprint([time, player_id, card, card_type, reason])
+                                # 'fingerprint': self._compute_fingerprint([time, player_id, card, card_type, reason])
                                 })
 
         return results
@@ -462,7 +463,8 @@ class OptaF9Parser(OptaParser):
                                 'time': time,
                                 'player_id': player_id,
                                 'type': _type,
-                                'fingerprint': self._compute_fingerprint([time, player_id, _type])})
+                                # 'fingerprint': self._compute_fingerprint([time, player_id, _type])
+                })
 
         return results
 
@@ -522,11 +524,11 @@ class OptaF9Parser(OptaParser):
                         esh = s.get('ESH')
                     value = s.text
 
-                    id = hashlib.sha1(
-                        ''.join([competition_id, season_id, match_id, team_id, _type]).encode('utf-8')).hexdigest()
+                    # id = hashlib.sha1(
+                    #     ''.join([competition_id, season_id, match_id, team_id, _type]).encode('utf-8')).hexdigest()
 
                     results.append({
-                        'id': id,
+                        # 'id': id,
                         'competition_id': competition_id,
                         'season_id': season_id,
                         'match_id': match_id,
@@ -542,8 +544,8 @@ class OptaF9Parser(OptaParser):
                         'efh': efh,
                         'esh': esh,
                         'value': value,
-                        'fingerprint': self._compute_fingerprint(
-                            [score, sh_score, side, formation_used, official_id, fh, sh, efh, esh, value])
+                        # 'fingerprint': self._compute_fingerprint(
+                        #     [score, sh_score, side, formation_used, official_id, fh, sh, efh, esh, value])
                     })
 
         return results
@@ -609,12 +611,12 @@ class OptaF9Parser(OptaParser):
                     value = s.text
 
                     if _type != 'formation_place':
-                        id = hashlib.sha1(
-                            ''.join([competition_id, season_id, match_id, player_id, _type]).encode(
-                                'utf-8')).hexdigest()
+                        # id = hashlib.sha1(
+                        #     ''.join([competition_id, season_id, match_id, player_id, _type]).encode(
+                        #         'utf-8')).hexdigest()
 
                         results.append({
-                            'id': id,
+                            # 'id': id,
                             'player_id': player_id,
                             'competition_id': competition_id,
                             'season_id': season_id,
@@ -633,9 +635,9 @@ class OptaF9Parser(OptaParser):
                             'formation_place': formation_place,
                             'type': _type,
                             'value': value,
-                            'fingerprint': self._compute_fingerprint(
-                                [score, sh_score, side, formation_used, official_id, position,
-                                 sub_position, shirt_number, status, captain, formation_place, value])
+                            # 'fingerprint': self._compute_fingerprint(
+                            #     [score, sh_score, side, formation_used, official_id, position,
+                            #      sub_position, shirt_number, status, captain, formation_place, value])
                         })
 
         return results
@@ -675,7 +677,7 @@ class OptaWebService(object):
         for stat in game.get_goals():
 
             d = dict()
-            d['id'] = hashlib.sha1(''.join([stat['id'], 'Goal']).encode('utf-8')).hexdigest()
+            # d['id'] = hashlib.sha1(''.join([stat['id'], 'Goal']).encode('utf-8')).hexdigest()
             d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
@@ -687,13 +689,13 @@ class OptaWebService(object):
             d['seconds'] = '0'
             d['description'] = stat['type']
             d['detail'] = ''
-            d['fingerprint'] = stat['fingerprint']
+            # d['fingerprint'] = stat['fingerprint']
 
             results.append(d)
 
             if stat['assist_id'] is not None:
                 d = dict()
-                d['id'] = hashlib.sha1(''.join([stat['id'], 'Assist']).encode('utf-8')).hexdigest()
+                # d['id'] = hashlib.sha1(''.join([stat['id'], 'Assist']).encode('utf-8')).hexdigest()
                 d['event_id'] = stat['id']
                 d['competition_id'] = game.get_competition()['id']
                 d['season_id'] = game.get_season()['id']
@@ -705,13 +707,13 @@ class OptaWebService(object):
                 d['seconds'] = '0'
                 d['description'] = ''
                 d['detail'] = ''
-                d['fingerprint'] = stat['fingerprint']
+                # d['fingerprint'] = stat['fingerprint']
 
                 results.append(d)
 
             if stat['second_assist_id'] is not None:
                 d = dict()
-                d['id'] = hashlib.sha1(''.join([stat['id'], 'SecondAssist']).encode('utf-8')).hexdigest()
+                # d['id'] = hashlib.sha1(''.join([stat['id'], 'SecondAssist']).encode('utf-8')).hexdigest()
                 d['event_id'] = stat['id']
                 d['competition_id'] = game.get_competition()['id']
                 d['season_id'] = game.get_season()['id']
@@ -723,13 +725,13 @@ class OptaWebService(object):
                 d['seconds'] = '0'
                 d['description'] = ''
                 d['detail'] = ''
-                d['fingerprint'] = stat['fingerprint']
+                # d['fingerprint'] = stat['fingerprint']
 
                 results.append(d)
 
         for stat in game.get_bookings():
             d = dict()
-            d['id'] = hashlib.sha1(''.join([stat['id'], stat['card']]).encode('utf-8')).hexdigest()
+            # d['id'] = hashlib.sha1(''.join([stat['id'], stat['card']]).encode('utf-8')).hexdigest()
             d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
@@ -741,13 +743,13 @@ class OptaWebService(object):
             d['seconds'] = '0'
             d['description'] = stat['cardtype']
             d['detail'] = stat['reason']
-            d['fingerprint'] = stat['fingerprint']
+            # d['fingerprint'] = stat['fingerprint']
 
             results.append(d)
 
         for stat in game.get_substitutions():
             d = dict()
-            d['id'] = hashlib.sha1(''.join([stat['id'], 'SubOff']).encode('utf-8')).hexdigest()
+            # d['id'] = hashlib.sha1(''.join([stat['id'], 'SubOff']).encode('utf-8')).hexdigest()
             d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
@@ -759,12 +761,12 @@ class OptaWebService(object):
             d['seconds'] = '0'
             d['description'] = stat['reason']
             d['detail'] = ''
-            d['fingerprint'] = stat['fingerprint']
+            # d['fingerprint'] = stat['fingerprint']
 
             results.append(d)
 
             d = dict()
-            d['id'] = hashlib.sha1(''.join([stat['id'], 'SubOn']).encode('utf-8')).hexdigest()
+            # d['id'] = hashlib.sha1(''.join([stat['id'], 'SubOn']).encode('utf-8')).hexdigest()
             d['event_id'] = stat['id']
             d['competition_id'] = game.get_competition()['id']
             d['season_id'] = game.get_season()['id']
@@ -776,7 +778,7 @@ class OptaWebService(object):
             d['seconds'] = '0'
             d['description'] = stat['reason']
             d['detail'] = ''
-            d['fingerprint'] = stat['fingerprint']
+            # d['fingerprint'] = stat['fingerprint']
 
             results.append(d)
 

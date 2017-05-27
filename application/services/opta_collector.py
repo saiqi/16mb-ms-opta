@@ -17,8 +17,8 @@ class OptaCollectorService(object):
 
     @staticmethod
     def _checksum(game):
-        stats = sorted(game['player_stats'], key=lambda k: k['id'])
-        concat = ''.join(r['fingerprint'] for r in stats)
+        stats = sorted(game['player_stats'], key=lambda k: (k['player_id'], k['type']))
+        concat = ''.join(str(r['value']) for r in stats)
         return hashlib.md5(concat.encode('utf-8')).hexdigest()
 
     @rpc

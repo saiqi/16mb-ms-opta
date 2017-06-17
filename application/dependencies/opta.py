@@ -97,7 +97,7 @@ class OptaF9Parser(OptaParser):
         if node.xpath("Stat[@Type='season_name']"):
             name = node.xpath("Stat[@Type='season_name']")[0].text.replace('Season', '')
 
-        return {'id': id, 'name': name, 'fingerprint': self._compute_fingerprint([name])}
+        return {'id': id, 'name': name}
 
     def get_venue(self):
         if self.tree.xpath('SoccerDocument/Venue'):

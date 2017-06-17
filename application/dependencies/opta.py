@@ -184,6 +184,7 @@ class OptaF9Parser(OptaParser):
                             'first_name': first_name,
                             'last_name': last_name,
                             'known': known_name,
+                            'type': 'player'
                             # 'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
                         })
 
@@ -213,6 +214,7 @@ class OptaF9Parser(OptaParser):
                         'first_name': first_name,
                         'last_name': last_name,
                         'known': known_name,
+                        'type': 'manager'
                         # 'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
                     })
 
@@ -241,6 +243,7 @@ class OptaF9Parser(OptaParser):
                     'first_name': first_name,
                     'last_name': last_name,
                     'known': known_name,
+                    'type': 'referee'
                     # 'fingerprint': self._compute_fingerprint([first_name, last_name, known_name])
                 })
 

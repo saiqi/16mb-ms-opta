@@ -104,15 +104,16 @@ def test_get_ids_by_season_and_competition(database):
 def test_get_f9(database):
     service = worker_factory(OptaCollectorService, database=database)
     service.opta.get_game.side_effect = lambda game_id: {
-            'season': {'id': 's_id', 'fingerprint': 'season'},
-            'competition': {'id': 'c_id', 'fingerprint': 'competition'},
-            'venue': {'id': 'v_id', 'fingerprint': 'venue'},
-            'teams': [{'id': 't_1', 'fingerprint': 't1'}, {'id': 't_2', 'fingerprint': 't2'}],
-            'persons': [{'id': 'p_1', 'fingerprint': 'p1'}, {'id': 'p_2', 'fingerprint': 'p2'}],
-            'match_info': {'id': game_id, 'fingerprint': 'game', 'period': 'FullTime'},
-            'events': [{'id': 'e_1', 'fingerprint': 'e1'}, {'id': 'e_2', 'fingerprint': 'e2'}],
-            'team_stats': [{'id': 'ts_1', 'fingerprint': 'ts1'}, {'id': 'ts_2', 'fingerprint': 'ts2'}],
-            'player_stats': [{'id': 'ps_1', 'fingerprint': 'ps1'}, {'id': 'ps_2', 'fingerprint': 'ps2'}]
+            'season': {'id': 's_id'},
+            'competition': {'id': 'c_id'},
+            'venue': {'id': 'v_id'},
+            'teams': [{'id': 't_1'}, {'id': 't_2'}],
+            'persons': [{'id': 'p_1', 'type': 'player'}, {'id': 'p_2', 'type': 'player'}],
+            'match_info': {'id': game_id, 'period': 'FullTime'},
+            'events': [{'id': 'e_1'}, {'id': 'e_2'}],
+            'team_stats': [{'team_id': 'ts_1'}, {'team_id': 'ts_2'}],
+            'player_stats': [{'player_id': 'p_1', 'type': 'ps1', 'value': 10},
+                             {'player_id': 'p_2', 'type': 'ps2', 'value': 5}]
         }
 
     game = service.get_f9('g_id')
@@ -125,15 +126,15 @@ def test_get_f9(database):
     assert game['status'] == 'UNCHANGED'
 
     service.opta.get_game.side_effect = lambda game_id: {
-        'season': {'id': 's_id', 'fingerprint': 'season'},
-        'competition': {'id': 'c_id', 'fingerprint': 'competition'},
-        'venue': {'id': 'v_id', 'fingerprint': 'venue'},
-        'teams': [{'id': 't_1', 'fingerprint': 't1'}, {'id': 't_2', 'fingerprint': 't2'}],
-        'persons': [{'id': 'p_1', 'fingerprint': 'p1'}, {'id': 'p_2', 'fingerprint': 'p2'}],
-        'match_info': {'id': game_id, 'fingerprint': 'game', 'period': 'FullTime'},
-        'events': [{'id': 'e_1', 'fingerprint': 'e1'}, {'id': 'e_2', 'fingerprint': 'e2'}],
-        'team_stats': [{'id': 'ts_1', 'fingerprint': 'ts1'}, {'id': 'ts_2', 'fingerprint': 'ts2'}],
-        'player_stats': [{'id': 'ps_1', 'fingerprint': 'ps1'}]
+        'season': {'id': 's_id'},
+        'competition': {'id': 'c_id'},
+        'venue': {'id': 'v_id'},
+        'teams': [{'id': 't_1'}, {'id': 't_2'}],
+        'persons': [{'id': 'p_1'}, {'id': 'p_2'}],
+        'match_info': {'id': game_id, 'period': 'FullTime'},
+        'events': [{'id': 'e_1'}, {'id': 'e_2'}],
+        'team_stats': [{'team_id': 'ts_1'}, {'team_id': 'ts_2'}],
+        'player_stats': [{'player_id': 'p_1', 'type': 'ps1', 'value': 16}]
     }
 
     game = service.get_f9('g_id')

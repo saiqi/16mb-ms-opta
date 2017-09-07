@@ -11,13 +11,13 @@ class DummyService(object):
 
     @dummy
     def get_calendar(self):
-        calendar = self.opta_webservice.get_calendar('2015', '24')
+        calendar = self.opta_webservice.get_calendar('2017', '24')
 
         return calendar
 
     @dummy
     def get_game(self):
-        game = self.opta_webservice.get_game('805305')
+        game = self.opta_webservice.get_game('920533')
 
         return game
 
@@ -40,7 +40,7 @@ def test_end_to_end(opta_url, opta_user, opta_password, container_factory):
 
     with entrypoint_hook(container, 'get_game') as get_game:
         game = get_game()
-        assert game['season']['id'] == '2015'
+        assert game['season']['id'] == '2017'
         assert game['competition']['id'] == 'c24'
 
     with entrypoint_hook(container, 'get_corrupted_game') as get_corrupted_game:

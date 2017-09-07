@@ -7,6 +7,7 @@ import datetime
 import pytest
 from nameko.testing.services import worker_factory
 from pymongo import MongoClient
+import bson.json_util
 
 from application.services.opta_collector import OptaCollectorService
 
@@ -104,40 +105,42 @@ def test_get_ids_by_season_and_competition(database):
 def test_get_f9(database):
     service = worker_factory(OptaCollectorService, database=database)
     service.opta.get_game.side_effect = lambda game_id: {
-            'season': {'id': 's_id'},
-            'competition': {'id': 'c_id'},
-            'venue': {'id': 'v_id'},
-            'teams': [{'id': 't_1'}, {'id': 't_2'}],
-            'persons': [{'id': 'p_1', 'type': 'player'}, {'id': 'p_2', 'type': 'player'}],
-            'match_info': {'id': game_id, 'period': 'FullTime'},
-            'events': [{'id': 'e_1'}, {'id': 'e_2'}],
-            'team_stats': [{'team_id': 'ts_1'}, {'team_id': 'ts_2'}],
-            'player_stats': [{'player_id': 'p_1', 'type': 'ps1', 'value': 10},
-                             {'player_id': 'p_2', 'type': 'ps2', 'value': 5}]
-        }
+        'season': {'id': 's_id', 'name': 'Season'},
+        'competition': {'id': 'c_id', 'name': 'Competition'},
+        'venue': {'id': 'v_id', 'name': 'Venue', 'country': 'Country'},
+        'teams': [{'id': 't_1', 'name': 'T1'}, {'id': 't_2', 'name': 'T2'}],
+        'persons': [{'id': 'p_1', 'type': 'player', 'first_name': 'f', 'last_name': 'l', 'known': None},
+                    {'id': 'p_2', 'type': 'player', 'first_name': 'i', 'last_name': 'a', 'known': 'ia'}],
+        'match_info': {'id': game_id, 'period': 'FullTime', 'date': datetime.datetime.utcnow()},
+        'events': [{'id': 'e_1'}, {'id': 'e_2'}],
+        'team_stats': [{'team_id': 't_1', 'side': 'Home'}, {'team_id': 't_2', 'side': 'Away'}],
+        'player_stats': [{'player_id': 'p_1', 'type': 'ps1', 'value': 10},
+                         {'player_id': 'p_2', 'type': 'ps2', 'value': 5}]
+    }
 
-    game = service.get_f9('g_id')
+    game = bson.json_util.loads(service.get_f9('g_id'))
     assert game['status'] == 'CREATED'
     assert game['checksum']
 
     service.database.f9.insert_one({'id': 'g_id', 'checksum': game['checksum']})
 
-    game = service.get_f9('g_id')
+    game = bson.json_util.loads(service.get_f9('g_id'))
     assert game['status'] == 'UNCHANGED'
 
     service.opta.get_game.side_effect = lambda game_id: {
-        'season': {'id': 's_id'},
-        'competition': {'id': 'c_id'},
-        'venue': {'id': 'v_id'},
-        'teams': [{'id': 't_1'}, {'id': 't_2'}],
-        'persons': [{'id': 'p_1'}, {'id': 'p_2'}],
-        'match_info': {'id': game_id, 'period': 'FullTime'},
+        'season': {'id': 's_id', 'name': 'Season'},
+        'competition': {'id': 'c_id', 'name': 'Competition'},
+        'venue': {'id': 'v_id', 'name': 'Venue', 'country': 'Country'},
+        'teams': [{'id': 't_1', 'name': 'T1'}, {'id': 't_2', 'name': 'T2'}],
+        'persons': [{'id': 'p_1', 'type': 'player', 'first_name': 'f', 'last_name': 'l', 'known': None},
+                    {'id': 'p_2', 'type': 'player', 'first_name': 'i', 'last_name': 'a', 'known': 'ia'}],
+        'match_info': {'id': game_id, 'period': 'FullTime', 'date': datetime.datetime.utcnow()},
         'events': [{'id': 'e_1'}, {'id': 'e_2'}],
-        'team_stats': [{'team_id': 'ts_1'}, {'team_id': 'ts_2'}],
+        'team_stats': [{'team_id': 't_1', 'side': 'Home'}, {'team_id': 't_2', 'side': 'Away'}],
         'player_stats': [{'player_id': 'p_1', 'type': 'ps1', 'value': 16}]
     }
 
-    game = service.get_f9('g_id')
+    game = bson.json_util.loads(service.get_f9('g_id'))
     assert game['status'] == 'UPDATED'
 
 

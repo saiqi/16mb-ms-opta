@@ -21,6 +21,85 @@ class OptaCollectorService(object):
         concat = ''.join(str(r['value']) for r in stats)
         return hashlib.md5(concat.encode('utf-8')).hexdigest()
 
+    @staticmethod
+    def _build_game_event_content(game):
+        team_sides = list(set([(r['team_id'], r['side']) for r in game['team_stats']]))
+
+        home_team_id = [r[0] for r in team_sides if r[1] == 'Home'][0]
+        away_team_id = [r[0] for r in team_sides if r[1] == 'Away'][0]
+
+        home_team = [r['name'] for r in game['teams'] if r['id'] == home_team_id][0]
+        away_team = [r['name'] for r in game['teams'] if r['id'] == away_team_id][0]
+
+        return {
+            'venue': game['venue']['name'],
+            'country': game['venue']['country'],
+            'competition': game['competition']['name'],
+            'season': game['season']['name'],
+            'name': '{} - {}'.format(home_team, away_team)
+        }
+
+    @staticmethod
+    def _handle_referential_entity(entity, _type):
+        entity_formatted = {'id': entity['id'], 'provider': 'opta_f9', 'informations': entity}
+
+        if _type in ('competition', 'venue', 'season', 'teams'):
+            entity_formatted['common_name'] = entity['name']
+
+            if _type in ('competition', 'venue', 'season'):
+                entity_formatted['type'] = ' '.join(['soccer', _type])
+            else:
+                entity_formatted['type'] = 'soccer team'
+
+        else:
+            common_name = ' '.join([entity['first_name'], entity['last_name']])
+            if entity['known'] is not None:
+                common_name = entity['known']
+            entity_formatted['common_name'] = common_name
+            entity_formatted['type'] = ' '.join(['soccer', entity['type']])
+
+        return entity_formatted
+
+    @staticmethod
+    def _extract_referential(game):
+        entities = list()
+
+        timeline_content = OptaCollectorService._build_game_event_content(game)
+
+        for k in ('competition', 'season', 'venue', 'persons', 'teams'):
+            if k in game:
+                current_entity = game[k]
+
+                if isinstance(current_entity, list):
+                    for r in current_entity:
+                        timeline_entry = {
+                            'id': r['id'],
+                            'date': game['match_info']['date'].isoformat(),
+                            'provider': 'opta_f9',
+                            'type': 'game',
+                            'source': game['match_info']['id'],
+                            'content': timeline_content
+                        }
+                        entities.append({
+                            'entity': OptaCollectorService._handle_referential_entity(r, k),
+                            'timeline_entries': [timeline_entry]
+                        })
+                else:
+                    timeline_entry = {
+                        'id': current_entity['id'],
+                        'date': game['match_info']['date'].isoformat(),
+                        'provider': 'opta_f9',
+                        'type': 'game',
+                        'source': game['match_info']['id'],
+                        'content': timeline_content
+                    }
+                    entities.append({
+                        'entity': OptaCollectorService._handle_referential_entity(current_entity, k),
+                        'timeline_entries': [timeline_entry]
+                    })
+
+        return entities
+
     @rpc
     def add_f1(self, season_id, competition_id):
 
@@ -77,12 +156,40 @@ class OptaCollectorService(object):
             old_checksum = self.database.f9.find_one({'id': match_id}, {'checksum': 1, '_id': 0})
 
             if old_checksum is None:
-                return {'status': 'CREATED', 'payload': bson.json_util.dumps(game), 'checksum': checksum}
+                status = 'CREATED'
             else:
                 if old_checksum['checksum'] != checksum:
-                    return {'status': 'UPDATED', 'payload': bson.json_util.dumps(game), 'checksum': checksum}
+                    status = 'UPDATED'
                 else:
-                    return {'status': 'UNCHANGED', 'payload': bson.json_util.dumps(game), 'checksum': checksum}
+                    status = 'UNCHANGED'
+
+            referential = self._extract_referential(game)
+            datastore = [
+                {
+                    'type': 'playerstat',
+                    'records': game['player_stats']
+                },
+                {
+                    'type': 'teamstat',
+                    'records': game['team_stats']
+                },
+                {
+                    'type': 'event',
+                    'records': game['events']
+                },
+                {
+                    'type': 'matchinfo',
+                    'records': [game['match_info']]
+                }
+            ]
+
+            return bson.json_util.dumps({
+                'status': status,
+                'checksum': checksum,
+                'referential': referential,
+                'datastore': datastore
+            })
+
         return None
 
     @rpc

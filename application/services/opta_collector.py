@@ -62,9 +62,18 @@ class OptaCollectorService(object):
 
     @staticmethod
     def _extract_referential(game):
+        events = list()
         entities = list()
-
-        timeline_content = OptaCollectorService._build_game_event_content(game)
+        event_content = OptaCollectorService._build_game_event_content(game)
+        event = {
+            'id': game['match_info']['id'],
+            'date': game['match_info']['date'].isoformat(),
+            'provider': 'opta_f9',
+            'type': 'game',
+            'common_name': event_content['name'],
+            'content': event_content,
+            'entities': []
+        }
 
         for k in ('competition', 'season', 'venue', 'persons', 'teams'):
             if k in game:
@@ -72,33 +81,17 @@ class OptaCollectorService(object):
 
                 if isinstance(current_entity, list):
                     for r in current_entity:
-                        timeline_entry = {
-                            'id': r['id'],
-                            'date': game['match_info']['date'].isoformat(),
-                            'provider': 'opta_f9',
-                            'type': 'game',
-                            'source': game['match_info']['id'],
-                            'content': timeline_content
-                        }
-                        entities.append({
-                            'entity': OptaCollectorService._handle_referential_entity(r, k),
-                            'timeline_entries': [timeline_entry]
-                        })
-                else:
-                    timeline_entry = {
-                        'id': current_entity['id'],
-                        'date': game['match_info']['date'].isoformat(),
-                        'provider': 'opta_f9',
-                        'type': 'game',
-                        'source': game['match_info']['id'],
-                        'content': timeline_content
-                    }
-                    entities.append({
-                        'entity': OptaCollectorService._handle_referential_entity(current_entity, k),
-                        'timeline_entries': [timeline_entry]
-                    })
+                        entity = OptaCollectorService._handle_referential_entity(r, k)
+                        entities.append(entity)
+                        event['entities'].append(entity)
 
-        return entities
+                else:
+                    entity = OptaCollectorService._handle_referential_entity(current_entity, k)
+                    entities.append(entity)
+                    event['entities'].append(entity)
+
+        events.append(event)
+        return {'entities': entities, 'events': events}
 
     @rpc
     def add_f1(self, season_id, competition_id):

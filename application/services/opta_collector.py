@@ -344,7 +344,7 @@ class OptaCollectorService(object):
                             'season_id': ru1['season_id'],
                             'id': ru1['id'],
                             'group_name': ru1['group_name'],
-                            'group_id': ru1['group'],
+                            'group_id': ru1['group_id'],
                             'round': ru1['round'],
                             'competition_id': ru1['competition_id']
                         }

@@ -16,7 +16,7 @@ class DummyService(object):
 
     @dummy
     def get_rugby_calendar(self):
-        calendar = self.opta_webservice.get_rugby_calendar('2017', '203')
+        calendar = self.opta_webservice.get_rugby_calendar('2018', '203')
 
         return calendar
 
@@ -34,7 +34,7 @@ class DummyService(object):
 
     @dummy
     def get_rugby_game(self):
-        game = self.opta_webservice.get_rugby_game('317014')
+        game = self.opta_webservice.get_rugby_game('318014')
 
         return game
 

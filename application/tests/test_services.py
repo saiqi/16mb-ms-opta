@@ -24,7 +24,7 @@ def database(db_url):
 
 def test_add_f1(database):
     service = worker_factory(OptaCollectorService, database=database)
-    service.opta.get_calendar.side_effect = lambda season_id, competition_id: [{
+    service.opta.get_soccer_calendar.side_effect = lambda season_id, competition_id: [{
         'competition_id': competition_id,
         'season_id': season_id,
         'date': datetime.datetime.now(),
@@ -40,9 +40,27 @@ def test_add_f1(database):
     assert service.database.f1.find_one({'id': 'g_id'})['competition_id'] == 'c_id'
 
 
+def test_add_ru1(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.opta.get_rugby_calendar.side_effect = lambda season_id, competition_id: [{
+        'competition_id': competition_id,
+        'season_id': season_id,
+        'date': datetime.datetime.now(),
+        'home_id': 'h_id',
+        'away_id': 'a_id',
+        'id': 'g_id',
+        'fingerprint': 'calendar'
+    }]
+
+    service.add_ru1('s_id', 'c_id')
+
+    assert service.database.ru1.find_one({'id': 'g_id'})['season_id'] == 's_id'
+    assert service.database.ru1.find_one({'id': 'g_id'})['competition_id'] == 'c_id'
+
+
 def test_update_all_f1(database):
     service = worker_factory(OptaCollectorService, database=database)
-    service.opta.get_calendar.side_effect = lambda season_id, competition_id: [{
+    service.opta.get_soccer_calendar.side_effect = lambda season_id, competition_id: [{
         'competition_id': competition_id,
         'season_id': season_id,
         'date': datetime.datetime.now(),
@@ -67,7 +85,34 @@ def test_update_all_f1(database):
     assert service.database.f1.find_one({'id': 'g_id'})['competition_id'] == 'c_id'
 
 
-def test_get_ids_by_dates(database):
+def test_update_all_ru1(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.opta.get_rugby_calendar.side_effect = lambda season_id, competition_id: [{
+        'competition_id': competition_id,
+        'season_id': season_id,
+        'date': datetime.datetime.now(),
+        'home_id': 'h_id',
+        'away_id': 'a_id',
+        'id': 'g_id',
+        'fingerprint': 'calendar'
+    }]
+
+    service.database.ru1.insert_one({
+        'competition_id': 'c_id',
+        'season_id': 's_id',
+        'date': datetime.datetime.now(),
+        'home_id': 'h_id',
+        'away_id': 'a_id',
+        'id': 'g_id',
+        'fingerprint': 'calendar'})
+
+    service.update_all_f1()
+
+    assert service.database.ru1.find_one({'id': 'g_id'})['season_id'] == 's_id'
+    assert service.database.ru1.find_one({'id': 'g_id'})['competition_id'] == 'c_id'
+
+
+def test_get_soccer_ids_by_dates(database):
     service = worker_factory(OptaCollectorService, database=database)
     service.database.f1.insert_one({
         'competition_id': 'c_id',
@@ -81,12 +126,12 @@ def test_get_ids_by_dates(database):
     start_date = datetime.datetime.now() - datetime.timedelta(days=1)
     end_date = datetime.datetime.now() + datetime.timedelta(days=1)
 
-    ids = service.get_ids_by_dates(start_date.isoformat(), end_date.isoformat())
+    ids = service.get_soccer_ids_by_dates(start_date.isoformat(), end_date.isoformat())
 
     assert 'g_id' in ids
 
 
-def test_get_ids_by_season_and_competition(database):
+def test_get_soccer_ids_by_season_and_competition(database):
     service = worker_factory(OptaCollectorService, database=database)
     service.database.f1.insert_one({
         'competition_id': 'c_id',
@@ -97,14 +142,49 @@ def test_get_ids_by_season_and_competition(database):
         'id': 'g_id',
         'fingerprint': 'calendar'})
 
-    ids = service.get_ids_by_season_and_competition('s_id', 'c_id')
+    ids = service.get_soccer_ids_by_season_and_competition('s_id', 'c_id')
+
+    assert 'g_id' in ids
+
+
+def test_get_rugby_ids_by_dates(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.database.ru1.insert_one({
+        'competition_id': 'c_id',
+        'season_id': 's_id',
+        'date': datetime.datetime.now(),
+        'home_id': 'h_id',
+        'away_id': 'a_id',
+        'id': 'g_id',
+        'fingerprint': 'calendar'})
+
+    start_date = datetime.datetime.now() - datetime.timedelta(days=1)
+    end_date = datetime.datetime.now() + datetime.timedelta(days=1)
+
+    ids = service.get_rugby_ids_by_dates(start_date.isoformat(), end_date.isoformat())
+
+    assert 'g_id' in ids
+
+
+def test_get_rugby_ids_by_season_and_competition(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.database.ru1.insert_one({
+        'competition_id': 'c_id',
+        'season_id': 's_id',
+        'date': datetime.datetime.now(),
+        'home_id': 'h_id',
+        'away_id': 'a_id',
+        'id': 'g_id',
+        'fingerprint': 'calendar'})
+
+    ids = service.get_rugby_ids_by_season_and_competition('s_id', 'c_id')
 
     assert 'g_id' in ids
 
 
 def test_get_f9(database):
     service = worker_factory(OptaCollectorService, database=database)
-    service.opta.get_game.side_effect = lambda game_id: {
+    service.opta.get_soccer_game.side_effect = lambda game_id: {
         'season': {'id': 's_id', 'name': 'Season'},
         'competition': {'id': 'c_id', 'name': 'Competition'},
         'venue': {'id': 'v_id', 'name': 'Venue', 'country': 'Country'},
@@ -127,7 +207,7 @@ def test_get_f9(database):
     game = bson.json_util.loads(service.get_f9('g_id'))
     assert game['status'] == 'UNCHANGED'
 
-    service.opta.get_game.side_effect = lambda game_id: {
+    service.opta.get_soccer_game.side_effect = lambda game_id: {
         'season': {'id': 's_id', 'name': 'Season'},
         'competition': {'id': 'c_id', 'name': 'Competition'},
         'venue': {'id': 'v_id', 'name': 'Venue', 'country': 'Country'},
@@ -158,3 +238,19 @@ def test_unack_f9(database):
     service.unack_f9('g_id')
 
     assert service.database.f9.find_one({'id': 'g_id'}) is None
+
+
+def test_ack_ru7(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.ack_ru7('g_id', 'toto')
+
+    assert service.database.ru7.find_one({'id': 'g_id'})
+
+
+def test_unack_ru7(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.database.ru7.insert_one({'id': 'g_id', 'checksum': 'toto'})
+
+    service.unack_ru7('g_id')
+
+    assert service.database.ru7.find_one({'id': 'g_id'}) is None

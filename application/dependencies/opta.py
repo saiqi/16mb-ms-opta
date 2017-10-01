@@ -368,7 +368,7 @@ class OptaF9Parser(OptaParser):
                                 'second_assist_id': second_assist_id,
                                 # 'fingerprint': self._compute_fingerprint(
                                 #     [time, player_id, _type, assist_id, second_assist_id])
-                })
+                                })
 
         return results
 
@@ -467,7 +467,7 @@ class OptaF9Parser(OptaParser):
                                 'player_id': player_id,
                                 'type': _type,
                                 # 'fingerprint': self._compute_fingerprint([time, player_id, _type])
-                })
+                                })
 
         return results
 
@@ -646,6 +646,217 @@ class OptaF9Parser(OptaParser):
         return results
 
 
+class OptaRU1Parser(OptaParser):
+    def __init__(self, xml_string):
+        self.tree = etree.fromstring(xml_string)
+
+    def get_calendar(self):
+        calendar = list()
+
+        team_dict = dict(zip([t.get('id') for t in self.tree.xpath('teams/team')],
+                             [t.get('name') for t in self.tree.xpath('teams/team')]))
+
+        for fixture in self.tree.xpath('fixture'):
+            competition_id = fixture.get('comp_id')
+            season_id = fixture.get('season_id')
+            match_id = fixture.get('id')
+            date = dateutil.parser.parse(fixture.get('datetime')).astimezone(pytz.utc)
+            competition_name = fixture.get('comp_name')
+            group = fixture.get('group')
+            group_name = fixture.get('group_name')
+            venue = fixture.get('venue')
+            venue_id = fixture.get('venue_id')
+            round = fixture.get('round')
+
+            home_id = None
+            away_id = None
+            for team in fixture.xpath('team'):
+                if team.get('home_or_away') == 'home':
+                    home_id = team.get('team_id')
+                else:
+                    away_id = team.get('team_id')
+
+            home_name = team_dict[home_id]
+            away_name = team_dict[away_id]
+            calendar.append({
+                'competition_id': competition_id,
+                'competition_name': competition_name,
+                'season_id': season_id,
+                'id': match_id,
+                'date': date,
+                'group_id': group,
+                'group_name': group_name,
+                'venue': venue,
+                'venue_id': venue_id,
+                'round': round,
+                'home_id': home_id,
+                'away_id': away_id,
+                'home_name': home_name,
+                'away_name': away_name
+            })
+
+        return calendar
+
+
+class OptaRU7Parser(OptaParser):
+    def __init__(self, xml_string):
+        parser = etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+        self.tree = etree.fromstring(xml_string, parser=parser)
+
+    @staticmethod
+    def _handle_stat(stat):
+        try:
+            value = float(stat)
+        except:
+            return None
+
+        return value
+
+    @staticmethod
+    def _handle_minute(value):
+        if '+' in value:
+            minute = int(value.split('+')[0])
+        else:
+            minute = int(value)
+
+        return minute
+
+    def get_rrml(self):
+        rrml = self.tree
+
+        attendance = None
+        if rrml.get('attendance'):
+            attendance = int(rrml.get('attendance'))
+
+        away_ht_score = None
+        if rrml.get('away_ht_score'):
+            away_ht_score = int(rrml.get('away_ht_score'))
+
+        away_score = None
+        if rrml.get('away_score'):
+            away_score = int(rrml.get('away_score'))
+
+        home_ht_score = None
+        if rrml.get('home_ht_score'):
+            home_ht_score = int(rrml.get('home_ht_score'))
+
+        home_score = None
+        if rrml.get('home_score'):
+            home_score = int(rrml.get('home_score'))
+
+        _id = rrml.get('id')
+
+        return {
+            'id': _id,
+            'attendance': attendance,
+            'away_ht_score': away_ht_score,
+            'away_score': away_score,
+            'home_ht_score': home_ht_score,
+            'home_score': home_score
+        }
+
+    def get_events(self):
+        events = list()
+
+        _id = self.tree.get('id')
+
+        for event in self.tree.xpath('Events')[0]:
+            events.append({
+                'minutes': self._handle_minute(event.get('minute')),
+                'seconds': int(event.get('second')),
+                'player_id': event.get('player_id'),
+                'team_id': event.get('team_id'),
+                'type': event.get('type'),
+                'temporary': event.get('temporary'),
+                'match_id': _id
+            })
+
+        return events
+
+    def get_official(self):
+        if self.tree.xpath('Officials') is None:
+            return None
+
+        for official in self.tree.xpath('Officials/Official'):
+            if official.get('role') == 'referee':
+                return {
+                    'country': official.get('country'),
+                    'role': official.get('role'),
+                    'name': official.get('official_name'),
+                    'id': official.get('id')
+                }
+
+    def get_teams(self):
+        teams = list()
+        for team in self.tree.xpath('TeamDetail/Team'):
+            teams.append({
+                'id': team.get('team_id'),
+                'name': team.get('team_name')
+            })
+        return teams
+
+    def get_players(self):
+        players = list()
+        for player in self.tree.xpath('TeamDetail/Team/Player'):
+            players.append({
+                'id': player.get('id'),
+                'name': player.get('player_name')
+            })
+        return players
+
+    def get_team_stats(self):
+        teamstats = list()
+
+        match_id = self.tree.get('id')
+
+        for team in self.tree.xpath('TeamDetail/Team'):
+            team_id = team.get('team_id')
+            side = team.get('home_or_away')
+
+            for stat in team.xpath('TeamStats/TeamStat'):
+                for k, v in stat.attrib.items():
+                    if k not in ('id', 'game_id', 'team_id'):
+                        teamstats.append({
+                            'team_id': team_id,
+                            'side': side,
+                            'match_id': match_id,
+                            'type': k,
+                            'value': self._handle_stat(v)
+                        })
+
+        return teamstats
+
+    def get_player_stats(self):
+        playerstats = list()
+
+        match_id = self.tree.get('id')
+
+        for team in self.tree.xpath('TeamDetail/Team'):
+            team_id = team.get('team_id')
+            side = team.get('home_or_away')
+
+            for player in team.xpath('Player'):
+                player_id = player.get('id')
+                position = player.get('position')
+                position_id = player.get('position_id')
+
+                for stat in player.xpath('PlayerStats/PlayerStat'):
+                    for k, v in stat.items():
+                        if k not in ('game_id', 'team_id', 'player_id', 'id',):
+                            playerstats.append({
+                                'match_id': match_id,
+                                'team_id': team_id,
+                                'side': side,
+                                'player_id': player_id,
+                                'position_name': position,
+                                'position_id': position_id,
+                                'type': k,
+                                'value': self._handle_stat(v)
+                            })
+
+        return playerstats
+
+
 class OptaWebServiceError(Exception):
     pass
 
@@ -657,7 +868,7 @@ class OptaWebService(object):
         self.user = user
         self.password = password
 
-    def get_calendar(self, season_id, competition_id):
+    def get_soccer_calendar(self, season_id, competition_id):
         params = {'feed_type': 'F1', 'user': self.user, 'psw': self.password, 'competition': competition_id,
                   'season_id': season_id}
 
@@ -674,7 +885,24 @@ class OptaWebService(object):
 
         return calendar
 
-    def _compute_events(self, game):
+    def get_rugby_calendar(self, season_id, competition_id):
+        params = {'feed_type': 'RU1', 'user': self.user, 'psw': self.password, 'competition': competition_id,
+                  'season_id': season_id}
+
+        r = requests.get(self.f1_url, params=params)
+
+        parser = OptaRU1Parser(r.content)
+
+        try:
+            calendar = parser.get_calendar()
+        except Exception:
+            raise OptaWebServiceError(
+                'Error while parsing RU1 with params: {season} {competition}'.format(season=season_id,
+                                                                                     competition=competition_id))
+
+        return calendar
+
+    def _compute_soccer_events(self, game):
         results = []
 
         for stat in game.get_goals():
@@ -787,7 +1015,7 @@ class OptaWebService(object):
 
         return results
 
-    def get_game(self, game_id):
+    def get_soccer_game(self, game_id):
         game = None
         params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
 
@@ -800,7 +1028,7 @@ class OptaWebService(object):
             parser = OptaF9Parser(r.content)
 
             if parser.get_match_info()['period'] == 'FullTime':
-                events = self._compute_events(parser)
+                events = self._compute_soccer_events(parser)
 
                 game = {
                     'season': parser.get_season(),
@@ -815,6 +1043,32 @@ class OptaWebService(object):
                 }
         except Exception:
             raise OptaWebServiceError('Error while parsing F9 with params: {game}'.format(game=game_id))
+
+        return game
+
+    def get_rugby_game(self, game_id):
+        game = None
+        params = {'feed_type': 'RU7', 'game_id': game_id, 'user': self.user, 'psw': self.password}
+
+        r = requests.get(self.f9_url, params=params)
+
+        if 'response' in r.text:
+            return game
+
+        try:
+            parser = OptaRU7Parser(r.content)
+
+            game = {
+                'rrml': parser.get_rrml(),
+                'events': parser.get_events(),
+                'official': parser.get_official(),
+                'teams': parser.get_teams(),
+                'players': parser.get_players(),
+                'team_stats': parser.get_team_stats(),
+                'player_stats': parser.get_player_stats()
+            }
+        except Exception:
+            raise OptaWebServiceError('Error while parsing RU7 with params: {game}'.format(game=game_id))
 
         return game
 

@@ -65,6 +65,8 @@ def test_end_to_end(opta_url, opta_user, opta_password, container_factory):
     with entrypoint_hook(container, 'get_rugby_game') as get_game:
         game = get_game()
         assert 'rrml' in game
+        assert 'id' in game['rrml']
+        assert 'status' in game['rrml']
         assert len(game['teams']) == 2
         assert len(game['player_stats']) > 0
         assert len(game['events']) > 0

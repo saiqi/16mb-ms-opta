@@ -334,12 +334,12 @@ class OptaCollectorService(object):
                 {
                     'type': 'matchscore',
                     'records': [{
-                        'id': game['id']['rrml'],
-                        'attendance': game['attendance']['rrml'],
-                        'away_ht_score': game['away_ht_score']['rrml'],
-                        'away_score': game['away_score']['rrml'],
-                        'home_ht_score': game['home_ht_score']['rrml'],
-                        'home_score': game['home_score']['rrml']
+                        'id': game['rrml']['id'],
+                        'attendance': game['rrml']['attendance'],
+                        'away_ht_score': game['rrml']['away_ht_score'],
+                        'away_score': game['rrml']['away_score'],
+                        'home_ht_score': game['rrml']['home_ht_score'],
+                        'home_score': game['rrml']['home_score']
                     }]
                 },
                 {

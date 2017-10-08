@@ -745,6 +745,7 @@ class OptaRU7Parser(OptaParser):
             home_score = int(rrml.get('home_score'))
 
         _id = rrml.get('id')
+        status = rrml.get('status')
 
         return {
             'id': _id,
@@ -752,7 +753,8 @@ class OptaRU7Parser(OptaParser):
             'away_ht_score': away_ht_score,
             'away_score': away_score,
             'home_ht_score': home_ht_score,
-            'home_score': home_score
+            'home_score': home_score,
+            'status': status
         }
 
     def get_events(self):
@@ -1058,15 +1060,16 @@ class OptaWebService(object):
         try:
             parser = OptaRU7Parser(r.content)
 
-            game = {
-                'rrml': parser.get_rrml(),
-                'events': parser.get_events(),
-                'official': parser.get_official(),
-                'teams': parser.get_teams(),
-                'players': parser.get_players(),
-                'team_stats': parser.get_team_stats(),
-                'player_stats': parser.get_player_stats()
-            }
+            if parser.get_rrml()['status'] == 'Result':
+                game = {
+                    'rrml': parser.get_rrml(),
+                    'events': parser.get_events(),
+                    'official': parser.get_official(),
+                    'teams': parser.get_teams(),
+                    'players': parser.get_players(),
+                    'team_stats': parser.get_team_stats(),
+                    'player_stats': parser.get_player_stats()
+                }
         except Exception:
             raise OptaWebServiceError('Error while parsing RU7 with params: {game}'.format(game=game_id))
 

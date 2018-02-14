@@ -196,7 +196,7 @@ class OptaCollectorService(object):
 
             for game in calendar:
                 self.database.f1.update_one({'id': game['id']},
-                                            {'$set': game})
+                                            {'$set': game}, upsert=True)
 
     @rpc
     def update_all_ru1(self):
@@ -216,7 +216,7 @@ class OptaCollectorService(object):
 
             for game in calendar:
                 self.database.ru1.update_one({'id': game['id']},
-                                             {'$set': game})
+                                             {'$set': game}, upsert=True)
 
     @rpc
     def get_soccer_ids_by_dates(self, start_date, end_date):

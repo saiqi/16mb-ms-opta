@@ -48,6 +48,8 @@ def test_end_to_end(opta_url, opta_user, opta_password, container_factory):
     with entrypoint_hook(container, 'get_soccer_calendar') as get_calendar:
         calendar = get_calendar()
         assert len(calendar) == 380
+        assert calendar[0]['home_name']
+        assert calendar[0]['home_name'] in ('St Etienne','Angers','Dijon','Guingamp','Caen','Lyon','Toulouse','Troyes','Marseille','Paris Saint-Germain','Montpellier','Nice','Monaco','Lille','Nantes','Strasbourg','Amiens','Metz','Bordeaux','Rennes')
 
     with entrypoint_hook(container, 'get_soccer_game') as get_game:
         game = get_game()

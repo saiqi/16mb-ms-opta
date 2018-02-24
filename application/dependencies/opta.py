@@ -18,6 +18,13 @@ class OptaF1Parser(OptaParser):
     def __init__(self, xml_string):
         self.tree = etree.fromstring(xml_string)
 
+    def _get_team_name(self, team_id):
+        team_path = self.tree.xpath('SoccerDocument/Team[@uID=\'{}\']/Name'.format(team_id))
+        print(team_path)
+        if len(team_path) == 1:
+            return team_path[0].text
+        return None
+
     def get_calendar(self):
         calendar = []
 
@@ -40,8 +47,10 @@ class OptaF1Parser(OptaParser):
             for t in row.xpath('TeamData'):
                 if t.get('Side') == 'Home':
                     home_id = t.get('TeamRef')
+                    home_name = self._get_team_name(home_id)
                 else:
                     away_id = t.get('TeamRef')
+                    away_name = self._get_team_name(away_id)
 
             calendar.append({
                 'competition_id': competition_id,
@@ -50,6 +59,8 @@ class OptaF1Parser(OptaParser):
                 'date': date,
                 'home_id': home_id,
                 'away_id': away_id,
+                'home_name': home_name,
+                'away_name': away_name
                 # 'fingerprint': self._compute_fingerprint([date, home_id, away_id])
             })
 

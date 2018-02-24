@@ -166,6 +166,21 @@ def test_get_rugby_ids_by_dates(database):
     assert 'g_id' in ids
 
 
+def test_get_f1(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.database.f1.insert_one({
+        'competition_id': 'c_id',
+        'season_id': 's_id',
+        'date': datetime.datetime.now(),
+        'home_id': 'h_id',
+        'away_id': 'a_id',
+        'id': 'g_id',
+        'fingerprint': 'calendar'})
+    game = bson.json_util.loads(service.get_f1('g_id'))
+
+    assert game['id'] == 'g_id'
+
+
 def test_get_rugby_ids_by_season_and_competition(database):
     service = worker_factory(OptaCollectorService, database=database)
     service.database.ru1.insert_one({

@@ -234,6 +234,11 @@ class OptaCollectorService(object):
         return [r['id'] for r in ids]
 
     @rpc
+    def get_f1(self, game_id):
+        game = self.database.f1.find_one({'id': game_id}, {'_id': 0})
+        return bson.json_util.dumps(game)
+
+    @rpc
     def get_rugby_ids_by_dates(self, start_date, end_date):
         start = dateutil.parser.parse(start_date)
         end = dateutil.parser.parse(end_date)
@@ -247,6 +252,11 @@ class OptaCollectorService(object):
                                      {'id': 1, '_id': 0})
 
         return [r['id'] for r in ids]
+
+    @rpc
+    def get_f1(self, game_id):
+        game = self.database.ru1.find_one({'id': game_id}, {'_id': 0})
+        return bson.json_util.dumps(game)
 
     @rpc
     def get_f9(self, match_id):

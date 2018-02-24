@@ -254,7 +254,7 @@ class OptaCollectorService(object):
         return [r['id'] for r in ids]
 
     @rpc
-    def get_f1(self, game_id):
+    def get_ru1(self, game_id):
         game = self.database.ru1.find_one({'id': game_id}, {'_id': 0})
         return bson.json_util.dumps(game)
 

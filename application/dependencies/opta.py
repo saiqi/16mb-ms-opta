@@ -20,7 +20,6 @@ class OptaF1Parser(OptaParser):
 
     def _get_team_name(self, team_id):
         team_path = self.tree.xpath('SoccerDocument/Team[@uID=\'{}\']/Name'.format(team_id))
-        print(team_path)
         if len(team_path) == 1:
             return team_path[0].text
         return None

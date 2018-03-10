@@ -1027,6 +1027,12 @@ class OptaWebService(object):
 
         return results
 
+    def _check_mins_played(self, player_stats):
+        for s in player_stats:
+            if s['type'] == 'mins_played':
+                return True
+        return False
+
     def get_soccer_game(self, game_id):
         game = None
         params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
@@ -1039,7 +1045,9 @@ class OptaWebService(object):
         try:
             parser = OptaF9Parser(r.content)
 
-            if parser.get_match_info()['period'] == 'FullTime':
+            match_info = parser.get_match_info()
+            player_stats = parser.get_player_stats()
+            if match_info['period'] == 'FullTime' and self._check_mins_played(player_stats):
                 events = self._compute_soccer_events(parser)
 
                 game = {
@@ -1048,10 +1056,10 @@ class OptaWebService(object):
                     'venue': parser.get_venue(),
                     'teams': parser.get_teams(),
                     'persons': parser.get_persons(),
-                    'match_info': parser.get_match_info(),
+                    'match_info': match_info,
                     'events': events,
                     'team_stats': parser.get_team_stats(),
-                    'player_stats': parser.get_player_stats()
+                    'player_stats': player_stats
                 }
         except Exception:
             raise OptaWebServiceError('Error while parsing F9 with params: {game}'.format(game=game_id))
@@ -1069,10 +1077,10 @@ class OptaWebService(object):
 
         try:
             parser = OptaRU7Parser(r.content)
-
-            if parser.get_rrml()['status'] == 'Result':
+            rrml = parser.get_rrml()
+            if rrml['status'] == 'Result':
                 game = {
-                    'rrml': parser.get_rrml(),
+                    'rrml': rrml,
                     'events': parser.get_events(),
                     'official': parser.get_official(),
                     'teams': parser.get_teams(),

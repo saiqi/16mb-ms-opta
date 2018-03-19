@@ -343,6 +343,8 @@ class OptaCollectorService(object):
 
             ru1 = self.database.ru1.find_one({'id': match_id}, {'_id': 0})
 
+            referential = self._extract_referential_from_rugby_game(ru1=ru1, ru7=game)
+
             datastore = [
                 {
                     'type': 'playerstat',
@@ -387,8 +389,6 @@ class OptaCollectorService(object):
                     'records': referential['labels']
                 }
             ]
-
-            referential = self._extract_referential_from_rugby_game(ru1=ru1, ru7=game)
 
             return bson.json_util.dumps({
                 'status': status,

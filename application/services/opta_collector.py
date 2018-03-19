@@ -64,6 +64,7 @@ class OptaCollectorService(object):
     def _extract_referential_from_soccer_game(game):
         events = list()
         entities = list()
+        labels = list()
         event_content = OptaCollectorService._build_soccer_game_event_content(game)
         event = {
             'id': game['match_info']['id'],
@@ -75,28 +76,32 @@ class OptaCollectorService(object):
             'entities': []
         }
 
+        labels.append({'id': event['id'], 'label': event['common_name']})
+
         for k in ('competition', 'season', 'venue', 'persons', 'teams'):
             if k in game:
                 current_entity = game[k]
-
                 if isinstance(current_entity, list):
                     for r in current_entity:
                         entity = OptaCollectorService._handle_referential_soccer_entity(r, k)
                         entities.append(entity)
                         event['entities'].append(entity)
+                        labels.append({'id': entity['id'], 'label': entity['common_name']})
 
                 else:
                     entity = OptaCollectorService._handle_referential_soccer_entity(current_entity, k)
                     entities.append(entity)
                     event['entities'].append(entity)
+                    labels.append({'id': entity['id'], 'label': entity['common_name']})                    
 
         events.append(event)
-        return {'entities': entities, 'events': events}
+        return {'entities': entities, 'events': events, 'labels': labels}
 
     @staticmethod
     def _extract_referential_from_rugby_game(ru1, ru7):
         events = list()
         entities = list()
+        labels = list()
 
         competition = {
             'id': ru1['competition_id'],
@@ -116,6 +121,8 @@ class OptaCollectorService(object):
 
         entities.append(venue)
         entities.append(competition)
+        labels.append({'id': competition['id'], 'label': competition['common_name']})
+        labels.append({'id': venue['id'], 'label': venue['common_name']})
 
         event = {
             'id': ru1['id'],
@@ -131,6 +138,8 @@ class OptaCollectorService(object):
             'entities': [venue, competition]
         }
 
+        labels.append({'id': event['id'], 'label': event['common_name']})
+
         for t in ru7['teams']:
             entity = {
                 'id': t['id'],
@@ -141,6 +150,7 @@ class OptaCollectorService(object):
             }
             event['entities'].append(entity)
             entities.append(entity)
+            labels.append({'id': entity['id'], 'label': entity['common_name']})
 
         for t in ru7['players']:
             entity = {
@@ -152,10 +162,11 @@ class OptaCollectorService(object):
             }
             event['entities'].append(entity)
             entities.append(entity)
+            labels.append({'id': entity['id'], 'label': entity['common_name']})
 
         events.append(event)
 
-        return {'entities': entities, 'events': events}
+        return {'entities': entities, 'events': events, 'labels': labels}
 
     @rpc
     def add_f1(self, season_id, competition_id):
@@ -295,13 +306,17 @@ class OptaCollectorService(object):
                 {
                     'type': 'matchinfo',
                     'records': [game['match_info']]
+                },
+                {
+                    'type': 'label',
+                    'records': referential['labels']
                 }
             ]
 
             return bson.json_util.dumps({
                 'status': status,
                 'checksum': checksum,
-                'referential': referential,
+                'referential': {k:referential[k] for k in ('entities','events') if k in referential},
                 'datastore': datastore
             })
 
@@ -366,6 +381,10 @@ class OptaCollectorService(object):
                             'competition_id': ru1['competition_id']
                         }
                     ]
+                },
+                {
+                    'type': 'label',
+                    'records': referential['labels']
                 }
             ]
 
@@ -375,7 +394,7 @@ class OptaCollectorService(object):
                 'status': status,
                 'checksum': checksum,
                 'datastore': datastore,
-                'referential': referential
+                'referential': {k:referential[k] for k in ('entities','events') if k in referential}
             })
 
         return None

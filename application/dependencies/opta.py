@@ -1036,8 +1036,8 @@ class OptaWebService(object):
     def get_soccer_game(self, game_id):
         game = None
         params = {'feed_type': 'F9', 'game_id': game_id, 'user': self.user, 'psw': self.password}
-
-        r = requests.get(self.f9_url, params=params)
+        url = self.f9_url + "/?feed_type={feed_type}&game_id={game_id}&user={user}&psw={psw}".format(**params)
+        r = requests.get(url)
 
         if 'response' in r.text:
             return game

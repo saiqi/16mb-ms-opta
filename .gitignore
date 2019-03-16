@@ -4,3 +4,4 @@
 .che/
 __pycache__/
 *.pyc
+.vscode

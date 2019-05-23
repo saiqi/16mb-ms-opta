@@ -1,10 +1,12 @@
-FROM saiqi/16mb-platform:latest
+FROM python:3.6-alpine
 
-RUN pip install python-dateutil pytz lxml
-
-RUN mkdir /service 
+RUN mkdir /service
+ADD ./requirements.txt /service
+WORKDIR /service
+RUN apk add --no-cache gcc musl-dev libxml2-dev libxslt-dev ;\
+    pip install -r requirements.txt
 
 ADD application /service/application
 ADD ./cluster.yml /service
 
-WORKDIR /service
+ENTRYPOINT ["nameko","run","--config","cluster.yml"]

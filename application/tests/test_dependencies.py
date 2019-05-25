@@ -39,8 +39,13 @@ class DummyService(object):
         return game
 
 
-def test_end_to_end(opta_url, opta_user, opta_password, container_factory):
-    config = {'OPTA_URL': opta_url, 'OPTA_USER': opta_user, 'OPTA_PASSWORD': opta_password}
+def test_end_to_end(container_factory):
+    import os
+    config = {
+        'OPTA_URL': os.environ.get('OPTA_URL'),
+        'OPTA_USER': os.environ.get('OPTA_USER'), 
+        'OPTA_PASSWORD': os.environ.get('OPTA_PASSWORD')
+    }
 
     container = container_factory(DummyService, config)
     container.start()

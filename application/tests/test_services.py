@@ -13,8 +13,8 @@ from application.services.opta_collector import OptaCollectorService
 
 
 @pytest.fixture
-def database(db_url):
-    client = MongoClient(db_url)
+def database():
+    client = MongoClient()
 
     yield client['test_db']
 
@@ -213,13 +213,16 @@ def test_get_f9(database):
                          {'player_id': 'p_2', 'type': 'ps2', 'value': 5}]
     }
 
-    game = bson.json_util.loads(service.get_f9('g_id'))
+    game = service.get_f9('g_id')
     assert game['status'] == 'CREATED'
     assert game['checksum']
+    assert game['id']
+    assert game['referential']
+    assert game['datastore']
 
     service.database.f9.insert_one({'id': 'g_id', 'checksum': game['checksum']})
 
-    game = bson.json_util.loads(service.get_f9('g_id'))
+    game = service.get_f9('g_id')
     assert game['status'] == 'UNCHANGED'
 
     service.opta.get_soccer_game.side_effect = lambda game_id: {
@@ -235,7 +238,7 @@ def test_get_f9(database):
         'player_stats': [{'player_id': 'p_1', 'type': 'ps1', 'value': 16}]
     }
 
-    game = bson.json_util.loads(service.get_f9('g_id'))
+    game = service.get_f9('g_id')
     assert game['status'] == 'UPDATED'
 
 

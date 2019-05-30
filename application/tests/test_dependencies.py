@@ -1,3 +1,4 @@
+import vcr
 from nameko.testing.services import dummy, entrypoint_hook
 
 from application.dependencies.opta import OptaDependency
@@ -38,7 +39,7 @@ class DummyService(object):
 
         return game
 
-
+@vcr.use_cassette('tests/vcr_cassettes/opta.yaml')
 def test_end_to_end(container_factory):
     import os
     config = {

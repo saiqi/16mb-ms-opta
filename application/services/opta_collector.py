@@ -5,7 +5,7 @@ import itertools
 
 from nameko.rpc import rpc
 from nameko.timer import timer
-from nameko.events import event_handler
+from nameko.events import event_handler, BROADCAST
 from nameko_mongodb.database import MongoDatabase
 from nameko.messaging import Publisher
 from nameko.constants import PERSISTENT
@@ -40,8 +40,10 @@ class OptaCollectorService(object):
 
     error = ErrorHandler()
 
-    publisher = Publisher(exchange=Exchange(
+    pub_input = Publisher(exchange=Exchange(
         name='all_inputs', type='topic', durable=True, auto_delete=True, delivery_mode=PERSISTENT))
+    pub_notif = Publisher(exchange=Exchange(
+        name='all_notifications', type='topic', durable=True, auto_delete=True, delivery_mode=PERSISTENT))
 
     @staticmethod
     def _checksum(game):
@@ -242,6 +244,7 @@ class OptaCollectorService(object):
     @timer(interval=24*60*60)
     @rpc
     def update_all_f1(self):
+        _log.info('Updating all f1 files ...')
         calendars = self.database.f1.aggregate([
             {
                 "$group": {
@@ -264,6 +267,7 @@ class OptaCollectorService(object):
     @timer(interval=24*60*60)
     @rpc
     def update_all_ru1(self):
+        _log.info('Updating all RU1 files ...')
         calendars = self.database.ru1.aggregate([
             {
                 "$group": {
@@ -299,7 +303,7 @@ class OptaCollectorService(object):
 
     def get_f1(self, game_id):
         game = self.database.f1.find_one({'id': game_id}, {'_id': 0})
-        return bson.json_util.dumps(game)
+        return game
 
     def get_rugby_ids_by_dates(self, start_date, end_date):
         start = dateutil.parser.parse(start_date)
@@ -317,7 +321,7 @@ class OptaCollectorService(object):
 
     def get_ru1(self, game_id):
         game = self.database.ru1.find_one({'id': game_id}, {'_id': 0})
-        return bson.json_util.dumps(game)
+        return game
 
     def get_f9(self, match_id):
 
@@ -369,7 +373,7 @@ class OptaCollectorService(object):
                 'checksum': checksum,
                 'referential': {k: referential[k] for k in ('entities', 'events') if k in referential},
                 'datastore': datastore,
-                'meta': {'type': 'f9'}
+                'meta': {'type': 'f9', 'source': 'opta'}
             }
 
         return None
@@ -449,7 +453,7 @@ class OptaCollectorService(object):
                 'checksum': checksum,
                 'datastore': datastore,
                 'referential': {k: referential[k] for k in ('entities', 'events') if k in referential},
-                'meta': {'type': 'ru7'}
+                'meta': {'type': 'ru7', 'source': 'opta'}
             }
 
         return None
@@ -488,27 +492,41 @@ class OptaCollectorService(object):
         def handle_game(game):
             _log.info(f'Publishing {game} file ...')
             t, i = game
-            self.publisher(bson.json_util.dumps(
+            self.pub_input(bson.json_util.dumps(
                 self.get_f9(i) if t == 'f9' else self.get_ru7(i)))
             return i
         return [handle_game(i) for i in ids]
 
-    @event_handler('loader', 'input_loaded')
+    @event_handler(
+        'loader', 'input_loaded', handler_type=BROADCAST, reliable_delivery=False)
     def ack(self, payload):
-        meta = payload.get('meta', None)
+        msg = bson.json_util.loads(payload)
+        meta = msg.get('meta', None)
         if not meta:
             return
-        checksum = payload.get('checksum', None)
+        checksum = msg.get('checksum', None)
         if not checksum:
             return
-        if 'type' not in meta:
+        if 'type' not in meta or 'source' not in meta or meta['source'] != 'opta':
             return
         t = meta['type']
+
+        def publish_notification(t, game, id_):
+            _log.info(f'Publishing notification for {id_}')
+            self.pub_notif(bson.json_util.dumps({
+                'id': id_,
+                'source': f'opta {t}',
+                'content': f'{game["home_name"]} - {game["away_name"]}'}))
+
         if t == 'f9':
-            _log.info(f'Acknowledging {t} file: {payload["id"]}')
-            self.ack_f9(payload['id'], checksum)
+            _log.info(f'Acknowledging {t} file: {msg["id"]}')
+            self.ack_f9(msg['id'], checksum)
+            game = self.get_f1(msg['id'])
+            publish_notification(t, game, msg['id'])
         elif t == 'ru7':
-            _log.info(f'Acknowledging {t} file: {payload["id"]}')
-            self.ack_ru7(payload['id'], checksum)
+            _log.info(f'Acknowledging {t} file: {msg["id"]}')
+            self.ack_ru7(msg['id'], checksum)
+            game = self.get_ru1(msg['id'])
+            publish_notification(t, game, msg['id'])
         else:
             return

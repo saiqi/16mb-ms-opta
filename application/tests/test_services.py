@@ -176,7 +176,7 @@ def test_get_f1(database):
         'away_id': 'a_id',
         'id': 'g_id',
         'fingerprint': 'calendar'})
-    game = bson.json_util.loads(service.get_f1('g_id'))
+    game = service.get_f1('g_id')
 
     assert game['id'] == 'g_id'
 

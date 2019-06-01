@@ -39,7 +39,7 @@ class DummyService(object):
 
         return game
 
-@vcr.use_cassette('tests/vcr_cassettes/opta.yaml')
+@vcr.use_cassette('application/tests/vcr_cassettes/opta.yaml')
 def test_end_to_end(container_factory):
     import os
     config = {

@@ -518,7 +518,7 @@ class OptaCollectorService(object):
             self.pub_notif(bson.json_util.dumps({
                 'id': id_,
                 'source': 'opta',
-                'type': 'f9',
+                'type': t,
                 'content': f'{game["home_name"]} - {game["away_name"]}'}))
 
         if t == 'f9':

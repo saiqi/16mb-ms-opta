@@ -462,6 +462,7 @@ class OptaCollectorService(object):
         self.database.f9.update_one(
             {'id': match_id}, {'$set': {'checksum': checksum}}, upsert=True)
 
+    @rpc
     def unack_f9(self, match_id):
         self.database.f9.delete_one({'id': match_id})
 
@@ -469,6 +470,7 @@ class OptaCollectorService(object):
         self.database.ru7.update_one(
             {'id': match_id}, {'$set': {'checksum': checksum}}, upsert=True)
 
+    @rpc
     def unack_ru7(self, match_id):
         self.database.ru7.delete_one({'id': match_id})
 
@@ -515,7 +517,8 @@ class OptaCollectorService(object):
             _log.info(f'Publishing notification for {id_}')
             self.pub_notif(bson.json_util.dumps({
                 'id': id_,
-                'source': f'opta {t}',
+                'source': 'opta',
+                'type': 'f9',
                 'content': f'{game["home_name"]} - {game["away_name"]}'}))
 
         if t == 'f9':

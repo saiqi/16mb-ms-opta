@@ -373,7 +373,7 @@ class OptaCollectorService(object):
                 'checksum': checksum,
                 'referential': {k: referential[k] for k in ('entities', 'events') if k in referential},
                 'datastore': datastore,
-                'meta': {'type': 'f9', 'source': 'opta'}
+                'meta': {'type': 'f9', 'source': 'opta', 'content_id': f'f{match_id}'}
             }
 
         return None

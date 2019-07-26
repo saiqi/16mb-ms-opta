@@ -214,7 +214,7 @@ class OptaCollectorService(object):
         meta = OPTA[opta_type][data_type].copy()
         if 'delete_keys' in meta:
             meta['delete_keys'] = {
-                'match_id': f'f{game_id}' if data_type == 'f9' else game_id
+                'match_id': f'f{game_id}' if opta_type == 'f9' else game_id
             }
         return meta
 
@@ -492,10 +492,11 @@ class OptaCollectorService(object):
         )
 
         def handle_game(game):
-            _log.info(f'Publishing {game} file ...')
             t, i = game
-            self.pub_input(bson.json_util.dumps(
-                self.get_f9(i) if t == 'f9' else self.get_ru7(i)))
+            feed = self.get_f9(i) if t == 'f9' else self.get_ru7(i)
+            if feed:
+                _log.info(f'Publishing {game} file ...')
+                self.pub_input(bson.json_util.dumps(feed))
             return i
         return [handle_game(i) for i in ids]
 

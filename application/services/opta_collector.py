@@ -534,3 +534,39 @@ class OptaCollectorService(object):
             publish_notification(t, game, msg['id'])
         else:
             return
+
+    @event_handler(
+        'api_service', 'input_config', handler_type=BROADCAST, reliable_delivery=False)
+    def handle_input_config(self, payload):
+        msg = bson.json_util.loads(payload)
+
+        if 'meta' not in msg or 'source' not in msg['meta'] or msg['meta']['source'] != 'opta':
+            return
+
+        if 'type' not in msg['meta']:
+            _log.warning('type is missing within meta')
+
+        type_ = msg['meta']['type']
+
+        _log.info('Received a related input config ...')
+        if 'config' not in msg:
+            _log.warning('No config within the message. Ignoring ...')
+        
+        config = msg['config']
+
+        if 'season' not in config or 'competition' not in config:
+            _log.warning('Either competition or season is missing within config')
+
+        if type_ == 'f1':
+            self.add_f1(config['season'], config['competition'])
+        elif type_ == 'ru1':
+            self.add_ru1(config['season'], config['competition'])
+        else:
+            _log.warning('type should be either f1 or ru1')
+            return
+
+        self.pub_notif(bson.json_util.dumps({
+            'id': ','.join([config['season'], config['competition']]),
+            'source': msg['meta']['source'],
+            'type': type_,
+            'content': 'A new Opta feed has been added.'}))

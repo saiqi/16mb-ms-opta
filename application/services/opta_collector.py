@@ -493,7 +493,11 @@ class OptaCollectorService(object):
 
         def handle_game(game):
             t, i = game
-            feed = self.get_f9(i) if t == 'f9' else self.get_ru7(i)
+            try:
+                feed = self.get_f9(i) if t == 'f9' else self.get_ru7(i)
+            except OptaWebServiceError:
+                _log.warning(f'Game {i} could not be retrieved!')
+                return i
             if feed:
                 _log.info(f'Publishing {game} file ...')
                 self.pub_input(bson.json_util.dumps(feed))

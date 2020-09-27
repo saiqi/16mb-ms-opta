@@ -656,6 +656,78 @@ class OptaF9Parser(OptaParser):
         return results
 
 
+class OptaF40Parser(OptaParser):
+    
+    def __init__(self, xml_string):
+        parser = etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+        self.tree = etree.fromstring(xml_string, parser=parser)
+
+    def get_squads(self):
+        doc = self.tree.xpath('//SoccerDocument')[0]
+        competition_id = f'c{doc.get("competition_id")}'
+        competition_name = doc.get('competition_name')
+        season_id = doc.get('season_id')
+        season_name = doc.get('season_name')
+
+        teams = doc.xpath('./Team')
+
+        def get_text_or_none(n, xpath):
+            return n.xpath(xpath)[0].text if n.xpath(xpath) else None
+
+        def handle_player(p):
+            return {
+                'id': p.get('uID'),
+                'name': p.xpath('./Name')[0].text,
+                'position': p.xpath('./Position')[0].text,
+                **{s.get('Type'):s.text if s.text != 'Unknown' else None\
+                    for s in p.xpath('./Stat')}
+            }
+
+        def handle_kit(k):
+            return (k.get('type'), {'colour1': k.get('colour1'), 'colour2':k.get('colour2')})
+
+        def handle_official(o):
+            return {
+                'type': o.get('Type').lower(),
+                'id': o.get('uID'),
+                'country': o.get('country'),
+                'first_name': o.xpath('./PersonName/First')[0].text,
+                'last_name': o.xpath('./PersonName/Last')[0].text,
+                'known': get_text_or_none(o, './PersonName/Known'),
+                'birth_date': get_text_or_none(o, './PersonName/BirthDate'),
+                'birth_place': get_text_or_none(o, './PersonName/BirthPlace'),
+                'join_date': get_text_or_none(o, './PersonName/join_date')
+            }
+
+        def handle_team(t):
+            stadium = {
+                'venue_name': get_text_or_none(t, './Stadium/Name'),
+                'venue_id': f'v{t.xpath("./Stadium")[0].get("uID")}' if t.xpath('./Stadium') else None,
+            }
+            return {
+                'competition_id': competition_id,
+                'competition_name': competition_name,
+                'season_id': season_id,
+                'season_name': season_name,
+                'country': t.get('country'),
+                'country_id': t.get('country_id'),
+                'country_iso': t.get('country_iso'),
+                'region_id': t.get('region_id'),
+                'region_name': t.get('region_name'),
+                'short_name': t.get('short_club_name'),
+                'name': t.xpath('./Name')[0].text,
+                'id': t.get('uID'),
+                'symid': t.xpath('./SYMID')[0].text,
+                'venue_name': stadium['venue_name'],
+                'venue_id': stadium['venue_id'],
+                'team_kits': dict(handle_kit(k) for k in t.xpath('./TeamKits/Kit')),
+                'officials': [handle_official(o) for o in t.xpath('./TeamOfficial')],
+                'players': [handle_player(p) for p in t.xpath('Player')]
+            }
+
+        return [handle_team(t) for t in teams]
+
+
 class OptaRU1Parser(OptaParser):
     def __init__(self, xml_string):
         self.tree = etree.fromstring(xml_string)
@@ -1092,6 +1164,20 @@ class OptaWebService(object):
             raise OptaWebServiceError('Error while parsing RU7 with params: {game}'.format(game=game_id))
 
         return game
+
+    def get_soccer_squads(self, season_id, competition_id):
+        params = {'feed_type': 'F40', 'user': self.user, 'psw': self.password, 'competition': competition_id,
+                  'season_id': season_id}
+
+        r = requests.get(self.f1_url, params=params)
+
+        parser = OptaF40Parser(r.content)
+
+        try:
+            return parser.get_squads()
+        except Exception as e:
+            raise OptaWebServiceError(
+                f'Error while parsing F40 with params {season_id} {competition_id}: {str(e)}')
 
 
 class OptaDependency(DependencyProvider):

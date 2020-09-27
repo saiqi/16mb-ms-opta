@@ -76,7 +76,7 @@ class OptaCollectorService(object):
     @staticmethod
     def _handle_referential_soccer_entity(entity, _type):
         entity_formatted = {
-            'id': entity['id'], 'provider': 'opta_f9', 'informations': entity}
+            'id': entity['id'], 'provider': 'opta_f9'}
 
         if _type in ('competition', 'venue', 'season', 'teams'):
             entity_formatted['common_name'] = entity['name']
@@ -291,9 +291,10 @@ class OptaCollectorService(object):
         start = dateutil.parser.parse(start_date)
         end = dateutil.parser.parse(end_date)
         ids = self.database.f1.find(
-            {'date': {'$gte': start, '$lt': end}}, {'id': 1, '_id': 0})
+            {'date': {'$gte': start, '$lt': end}},
+            {'id': 1, 'competition_id': 1, 'season_id': 1, '_id': 0})
 
-        return [r['id'] for r in ids]
+        return list(ids)
 
     def get_soccer_ids_by_season_and_competition(self, season_id, competition_id):
         ids = self.database.f1.find({'season_id': season_id, 'competition_id': competition_id},
@@ -309,9 +310,10 @@ class OptaCollectorService(object):
         start = dateutil.parser.parse(start_date)
         end = dateutil.parser.parse(end_date)
         ids = self.database.ru1.find(
-            {'date': {'$gte': start, '$lt': end}}, {'id': 1, '_id': 0})
+            {'date': {'$gte': start, '$lt': end}},
+            {'id': 1, 'competition_id': 1, 'season_id': 1, '_id': 0})
 
-        return [r['id'] for r in ids]
+        return list(ids)
 
     def get_rugby_ids_by_season_and_competition(self, season_id, competition_id):
         ids = self.database.ru1.find({'season_id': season_id, 'competition_id': competition_id},
@@ -329,54 +331,54 @@ class OptaCollectorService(object):
 
         game = self.opta.get_soccer_game(match_id)
 
-        if game:
-            checksum = self._checksum(game)
+        if not game:
+            return None
 
-            old_checksum = self.database.f9.find_one(
-                {'id': match_id}, {'checksum': 1, '_id': 0})
+        checksum = self._checksum(game)
 
-            if old_checksum is None:
-                status = 'CREATED'
+        old_checksum = self.database.f9.find_one(
+            {'id': match_id}, {'checksum': 1, '_id': 0})
+
+        if old_checksum is None:
+            status = 'CREATED'
+        else:
+            if old_checksum['checksum'] != checksum:
+                status = 'UPDATED'
             else:
-                if old_checksum['checksum'] != checksum:
-                    status = 'UPDATED'
-                else:
-                    status = 'UNCHANGED'
+                status = 'UNCHANGED'
 
-            referential = self._extract_referential_from_soccer_game(game)
-            datastore = [
-                {
-                    **self._get_opta_meta('f9', 'playerstat', match_id),
-                    'records': game['player_stats']
-                },
-                {
-                    **self._get_opta_meta('f9', 'teamstat', match_id),
-                    'records': game['team_stats']
-                },
-                {
-                    **self._get_opta_meta('f9', 'event', match_id),
-                    'records': game['events']
-                },
-                {
-                    **self._get_opta_meta('f9', 'matchinfo', match_id),
-                    'records': [game['match_info']]
-                },
-                {
-                    **LABEL,
-                    'records': referential['labels']
-                }
-            ]
-
-            return {
-                'id': match_id,
-                'status': status,
-                'checksum': checksum,
-                'referential': {k: referential[k] for k in ('entities', 'events') if k in referential},
-                'datastore': datastore,
-                'meta': {'type': 'f9', 'source': 'opta', 'content_id': f'f{match_id}'}
+        referential = self._extract_referential_from_soccer_game(game)
+        datastore = [
+            {
+                **self._get_opta_meta('f9', 'playerstat', match_id),
+                'records': game['player_stats']
+            },
+            {
+                **self._get_opta_meta('f9', 'teamstat', match_id),
+                'records': game['team_stats']
+            },
+            {
+                **self._get_opta_meta('f9', 'event', match_id),
+                'records': game['events']
+            },
+            {
+                **self._get_opta_meta('f9', 'matchinfo', match_id),
+                'records': [game['match_info']]
+            },
+            {
+                **LABEL,
+                'records': referential['labels']
             }
+        ]
 
-        return None
+        return {
+            'id': match_id,
+            'status': status,
+            'checksum': checksum,
+            'referential': {k: referential[k] for k in ('entities', 'events') if k in referential},
+            'datastore': datastore,
+            'meta': {'type': 'f9', 'source': 'opta', 'content_id': f'f{match_id}'}
+        }
 
     def get_ru7(self, match_id):
         self.database.ru7.create_index('id')
@@ -458,6 +460,56 @@ class OptaCollectorService(object):
 
         return None
 
+    def get_f40(self, season_id, competition_id):
+        squads = self.opta.get_soccer_squads(season_id, competition_id)
+
+        if not squads:
+            return None
+
+        meta = OPTA['f40']
+
+        def get_fields(k):
+            return set((m[0] for m in meta[k]['meta']))
+
+        datastore = [
+            {
+                **meta['playerinfo'],
+                'records': [{k: v for k, v in p.items() if k in get_fields('playerinfo')}
+                for t in squads for p in t['players']]
+            },
+            {
+                **meta['teaminfo'],
+                'records': [{k: v for k,v in t.items() if k in get_fields('teaminfo')}
+                for t in squads]
+            },
+            {
+                **meta['link'],
+                'records': [{
+                    'id': hashlib.md5(
+                        ''.join([p['id'], t['id'], t['season_id'], t['competition_id']])\
+                            .encode('utf-8')).hexdigest(),
+                    'competition_id': t['competition_id'],
+                    'season_id': t['season_id'],
+                    'player_id': p['id'],
+                    'team_id': t['id'],
+                    'join_date': p['join_date']
+                } for t in squads for p in t['players']]
+            }
+        ]
+
+        content_id = ','.join([season_id, competition_id])
+        return {
+            'id': content_id,
+            'status': 'UPDATED',
+            'checksum': None,
+            'referential': {
+                'informations': list(
+                    itertools.chain(datastore[0]['records'], datastore[1]['records']))
+            },
+            'datastore': datastore,
+            'meta': {'type': 'f40', 'source': 'opta', 'content_id': content_id}
+        }
+        
     def ack_f9(self, match_id, checksum):
         self.database.f9.update_one(
             {'id': match_id}, {'$set': {'checksum': checksum}}, upsert=True)
@@ -484,25 +536,48 @@ class OptaCollectorService(object):
 
         _log.info(
             f'Retrieving game ids from {start.isoformat()} to {end.isoformat()} ...')
-        ids = itertools.chain(
-            [('f9', i) for i in self.get_soccer_ids_by_dates(
+        games = itertools.chain(
+            [('soccer', i) for i in self.get_soccer_ids_by_dates(
                 start.isoformat(), end.isoformat())],
-            [('ru7', i) for i in self.get_rugby_ids_by_dates(
+            [('rugby', i) for i in self.get_rugby_ids_by_dates(
                 start.isoformat(), end.isoformat())]
         )
 
         def handle_game(game):
             t, i = game
             try:
-                feed = self.get_f9(i) if t == 'f9' else self.get_ru7(i)
+                feed = self.get_f9(i['id']) if t == 'soccer' else self.get_ru7(i['id'])
             except OptaWebServiceError:
-                _log.warning(f'Game {i} could not be retrieved!')
-                return i
-            if feed:
-                _log.info(f'Publishing {game} file ...')
+                _log.warning(f'Game {i["id"]} could not be retrieved!')
+                return False
+            
+            if feed and feed['status'] != 'UNCHANGED':
+                _log.info(f'Publishing {game} files ...')
                 self.pub_input(bson.json_util.dumps(feed))
-            return i
-        return [handle_game(i) for i in ids]
+                return True
+            
+            return False
+
+        def handle_competition(competition):
+            t, comp, season = competition
+
+            try:
+                feed = self.get_f40(season, comp) if t == 'soccer' else None
+            except OptaWebServiceError:
+                _log.warning(f'Competition {comp}/{season} could not be retrieved!')
+
+            if feed:
+                _log.info(f'Publishing {comp}/{season} files ...')
+                self.pub_input(bson.json_util.dumps(feed))
+        
+        competitions = set()
+        for g in games:
+            handled = handle_game(g)
+            if handled:
+                competitions.add((g[0], g[1]['competition_id'], g[1]['season_id']))
+        
+        for c in competitions:
+            handle_competition(c)
 
     @event_handler(
         'loader', 'input_loaded', handler_type=BROADCAST, reliable_delivery=False)

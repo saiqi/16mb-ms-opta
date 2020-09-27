@@ -34,6 +34,12 @@ class DummyService(object):
         return game
 
     @dummy
+    def get_soccer_squads(self):
+        s = self.opta_webservice.get_soccer_squads('2020', '24')
+
+        return s
+
+    @dummy
     def get_rugby_game(self):
         game = self.opta_webservice.get_rugby_game('318014')
 
@@ -44,7 +50,7 @@ def test_end_to_end(container_factory):
     import os
     config = {
         'OPTA_URL': os.environ.get('OPTA_URL'),
-        'OPTA_USER': os.environ.get('OPTA_USER'), 
+        'OPTA_USER': os.environ.get('OPTA_USER'),
         'OPTA_PASSWORD': os.environ.get('OPTA_PASSWORD')
     }
 
@@ -79,3 +85,47 @@ def test_end_to_end(container_factory):
         assert len(game['player_stats']) > 0
         assert len(game['events']) > 0
         assert len(game['team_stats']) > 0
+
+@vcr.use_cassette('tests/vcr_cassettes/f40.yaml')
+def test_f40(container_factory):
+    import os
+    config = {
+        'OPTA_URL': os.environ.get('OPTA_URL'),
+        'OPTA_USER': os.environ.get('OPTA_USER'),
+        'OPTA_PASSWORD': os.environ.get('OPTA_PASSWORD')
+    }
+
+    container = container_factory(DummyService, config)
+    container.start()
+
+    with entrypoint_hook(container, 'get_soccer_squads') as get_soccer_squads:
+        squads = get_soccer_squads()
+        assert squads
+
+        assert squads[0]['id'] == 't2128'
+        assert squads[0]['competition_id'] == 'c24'
+        assert squads[0]['season_id'] == '2020'
+        assert squads[0]['short_name'] == 'Angers'
+
+        psg = squads[15]
+        assert psg['id'] == 't149'
+        officials = psg['officials']
+        assert len(officials) == 3
+        for o in officials:
+            assert 'id' in o
+            assert 'first_name' in o
+            assert 'last_name' in o
+            assert 'type' in o
+            assert o['type'] == o['type'].lower()
+
+        kits = psg['team_kits']
+        for t in ('away', 'home', 'third'):
+            assert t in kits
+            assert 'colour1' in kits[t]
+            assert 'colour2' in kits[t]
+
+        for p in psg['players']:
+            assert p['id']
+            assert p['name']
+            assert p['position']
+            assert p['join_date']

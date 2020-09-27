@@ -242,6 +242,51 @@ def test_get_f9(database):
     assert game['status'] == 'UPDATED'
 
 
+def test_get_f40(database):
+    service = worker_factory(OptaCollectorService, database=database)
+    service.opta.get_soccer_squads.side_effect = lambda season_id, competition_id: [{
+        'competition_id': competition_id,
+        'competition_name': 'competition_name',
+        'season_id': season_id,
+        'season_name': 'season_name',
+        'country': 'country',
+        'country_id': 'country_id',
+        'country_iso': 'country_iso',
+        'region_id': 'region_id',
+        'region_name': 'region_name',
+        'short_name': 'short_club_name',
+        'name': './Name',
+        'id': 'uID',
+        'symid': './SYMID',
+        'venue_name': 'venue_name',
+        'venue_id': 'venue_id',
+        'team_kits': {},
+        'officials': [],
+        'players': [{
+            'id': 'VARCHAR(10)',
+            'first_name': 'VARCHAR(150)',
+            'last_name': 'VARCHAR(150)',
+            'known_name': 'VARCHAR(10)',
+            'birth_date': 'DATE',
+            'birth_place': 'VARCHAR(150)',
+            'first_nationality': 'VARCHAR(50)',
+            'preferred_foot': 'VARCHAR(10)',
+            'weight': 'INTEGER',
+            'height': 'INTEGER',
+            'real_position': 'VARCHAR(50)',
+            'real_position_side': 'VARCHAR(50)',
+            'country': 'VARCHAR(50)',
+            'join_date': 'join_date'
+        }]
+    }]
+
+    game = service.get_f40('s_id', 'c_id')
+    assert game['status'] == 'UPDATED'
+    assert not game['checksum']
+    assert game['id']
+    assert game['referential']
+    assert game['datastore']
+
 def test_ack_f9(database):
     service = worker_factory(OptaCollectorService, database=database)
     service.ack_f9('g_id', 'toto')

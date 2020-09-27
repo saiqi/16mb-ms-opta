@@ -503,8 +503,10 @@ class OptaCollectorService(object):
             'status': 'UPDATED',
             'checksum': None,
             'referential': {
-                'informations': list(
-                    itertools.chain(datastore[0]['records'], datastore[1]['records']))
+                'informations': list(itertools.chain(
+                    datastore[0]['records'],
+                    [{k: v for k,v in t.items() if k in get_fields('teaminfo').union({'team_kits'})}
+                    for t in squads]))
             },
             'datastore': datastore,
             'meta': {'type': 'f40', 'source': 'opta', 'content_id': content_id}

@@ -587,8 +587,7 @@ class OptaCollectorService(object):
         if not meta:
             return
         checksum = msg.get('checksum', None)
-        if not checksum:
-            return
+        
         if 'type' not in meta or 'source' not in meta or meta['source'] != 'opta':
             return
         t = meta['type']
@@ -602,15 +601,29 @@ class OptaCollectorService(object):
                 'content': f'{game["home_name"]} - {game["away_name"]}'}))
 
         if t == 'f9':
-            _log.info(f'Acknowledging {t} file: {msg["id"]}')
-            self.ack_f9(msg['id'], checksum)
-            game = self.get_f1(msg['id'])
-            publish_notification(t, game, msg['id'])
+            if checksum:
+                _log.info(f'Acknowledging {t} file: {msg["id"]}')
+                self.ack_f9(msg['id'], checksum)
+                game = self.get_f1(msg['id'])
+                publish_notification(t, game, msg['id'])
+            else:
+                _log.warning(f'Received an event {t} {msg["id"]} without checksum')
         elif t == 'ru7':
+            if checksum:
+                _log.info(f'Acknowledging {t} file: {msg["id"]}')
+                self.ack_ru7(msg['id'], checksum)
+                game = self.get_ru1(msg['id'])
+                publish_notification(t, game, msg['id'])
+            else:
+                _log.warning(f'Received an event {t} {msg["id"]} without checksum')
+        elif t == 'f40':
             _log.info(f'Acknowledging {t} file: {msg["id"]}')
-            self.ack_ru7(msg['id'], checksum)
-            game = self.get_ru1(msg['id'])
-            publish_notification(t, game, msg['id'])
+            self.pub_notif(bson.json_util.dumps({
+                'id': msg['id'],
+                'source': 'opta',
+                'type': t,
+                'content': 'Squads loaded'
+            }))
         else:
             return
 

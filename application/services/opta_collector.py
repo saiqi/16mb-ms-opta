@@ -567,6 +567,7 @@ class OptaCollectorService(object):
                 feed = self.get_f40(season, comp) if t == 'soccer' else None
             except OptaWebServiceError:
                 _log.warning(f'Competition {comp}/{season} could not be retrieved!')
+                return
 
             if feed:
                 _log.info(f'Publishing {comp}/{season} files ...')
